@@ -66,9 +66,9 @@ Write-Ok "Git: $git"
 # This drive does not record file ownership. Git 2.35+ refuses the folder
 # until it is listed in safe.directory. Add every path spelling Git might use.
 $safePaths = @(
+  "*",
   $Root,
-  ($Root -replace '\\', '/'),
-  (($Root -replace '\\', '/') -replace '^([A-Za-z]):', { param($m) $m.Groups[1].Value.ToLower() + ':' })
+  ($Root -replace '\\', '/')
 ) | Select-Object -Unique
 $existingSafe = @(& $git config --global --get-all safe.directory 2>$null)
 foreach ($dir in $safePaths) {
@@ -145,6 +145,7 @@ if (-not (Test-Path (Join-Path $Root ".git"))) {
 
 Write-Step "Staging Liliths Throne HTML"
 $code = Git add -A
+if ($code -ne 0) { throw "git add failed. If you see 'dubious ownership', the script should have marked this folder safe — run it again." }
 $status = Git-Out status --porcelain
 if (-not $status) {
   Write-Ok "Nothing new to commit"
@@ -187,14 +188,22 @@ if (-not $hasOrigin) {
     }
     $vis = if ($Public) { "--public" } else { "--private" }
     Write-Step "Creating GitHub repo $RepoName ($vis)"
-    $created = Gh repo create $RepoName $vis --source $Root --remote origin --push
+    # Do not pass --source. gh's own git check fails on this drive
+    # ("dubious ownership") even after safe.directory is set.
+    $created = Gh repo create $RepoName $vis
     if ($created -ne 0) {
       throw "gh repo create failed. If the name is taken, rerun with -RepoName something-else"
     }
-    Write-Ok "Uploaded. Opening the repo page..."
-    Gh repo view --web
-    Write-Host "`nDone." -ForegroundColor Green
-    exit 0
+    $url = "https://github.com/LubricatedKitty/$RepoName.git"
+    $me = ""
+    $old = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $me = ((& $gh api user --jq .login) | Out-String).Trim()
+    $ErrorActionPreference = $old
+    if ($me) { $url = "https://github.com/$me/$RepoName.git" }
+    Git remote add origin $url | Out-Null
+    $hasOrigin = $url
+    Write-Ok "Created $url"
   }
 }
 
