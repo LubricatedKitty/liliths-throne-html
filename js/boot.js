@@ -1,0 +1,126 @@
+(function () {
+  var scripts = [
+    "js/lt.js",
+    "js/paths.js",
+    "js/engine/colours.js",
+    "js/character/enums.js",
+    "js/character/statusEffects.js",
+    "js/character/bodyEnums.js",
+    "js/character/body.js",
+    "js/ui/openUI.js",
+    "js/ui/tooltip.js",
+    "js/engine/response.js",
+    "js/content/nodes.js",
+    "js/combat/attack.js",
+    "js/combat/moves.js",
+    "js/combat/tease.js",
+    "js/combat/spells.js",
+    "js/combat/status.js",
+    "js/combat/damage.js",
+    "js/combat/loot.js",
+    "js/combat/combat.js",
+    "js/content/combatNodes.js",
+    "js/sex/sex.js",
+    "js/content/sexNodes.js",
+    "js/character/names.js",
+    "js/character/player.js",
+    "js/character/clothing.js",
+    "js/character/npcGear.js",
+    "js/items/weapons.js",
+    "js/items/weaponRuntime.js",
+    "js/items/spellBooks.js",
+    "js/items/items.js",
+    "js/items/enchanting.js",
+    "js/items/tfApply.js",
+    "js/character/slavery.js",
+    "js/combat/weaponSpecials.js",
+    "js/character/occupations.js",
+    "js/character/npcs.js",
+    "js/engine/game.js",
+    "js/engine/save.js",
+    "js/engine/utilText.js",
+    "js/text/prologue.js",
+    "js/text/lab.js",
+    "js/text/lilayaBirthing.js",
+    "js/text/apartment.js",
+    "js/text/enforcerGeneric.js",
+    "js/text/enforcerBrax.js",
+    "js/text/scarlett.js",
+    "js/text/slaverAlley.js",
+    "js/text/slaveryAdministration.js",
+    "js/text/helenaNest.js",
+    "js/text/harpyNests.js",
+    "js/text/dominionPlaces.js",
+    "js/text/alleywayAttack.js",
+    "js/text/prostitute.js",
+    "js/text/stormStreetAttack.js",
+    "js/text/harpyAttack.js",
+    "js/text/harpyAttackStorm.js",
+    "js/text/encounterGeneric.js",
+    "js/text/zaranixGround.js",
+    "js/text/arcaneArts.js",
+    "js/text/ralphsSnacks.js",
+    "js/text/enslavement.js",
+    "js/text/angelsKiss.js",
+    "js/text/clothingEmporium.js",
+    "js/text/succubisSecrets.js",
+    "js/text/dreamLover.js",
+    "js/ui/responses.js",
+    "js/ui/menus/attributes.js",
+    "js/ui/menus/chromeButtons.js",
+    "js/ui/menus/saveLoad.js",
+    "js/ui/menus/phone.js",
+    "js/ui/menus/inventory.js",
+    "js/ui/menus/charactersPresent.js",
+    "js/content/characterCreation.js",
+    "js/content/advancedAppearance.js",
+    "js/content/bodyChanging.js",
+    "js/content/creationFinish.js",
+    "js/content/prologue.js",
+    "js/grid/grid.js",
+    "js/maps/allGrids.js",
+    "js/maps/placeVisuals.js",
+    "js/maps/worldMapVisuals.js",
+    "js/grid/roam.js",
+    "js/content/weather.js",
+    "js/content/world.js",
+    "js/content/alleys.js",
+    "js/content/lootNpc.js",
+    "js/content/encounters.js",
+    "js/content/house.js",
+    "js/content/houseManage.js",
+    "js/content/lab.js",
+    "js/character/pregnancy.js",
+    "js/content/demonHome.js",
+    "js/content/zaranix.js",
+    "js/content/enforcerHQ.js",
+    "js/content/slaverAlley.js",
+    "js/content/harpyNests.js",
+    "js/content/shoppingArcade.js",
+    "js/content/angelsKiss.js",
+    "js/content/arcadeShops.js",
+    "js/content/enchantNodes.js",
+    "js/content/bootFlow.js",
+    "js/main.js",
+  ];
+
+  function loadScript(path, callback) {
+    var script = document.createElement("script");
+    script.src = path;
+    script.async = false;
+    script.onload = function () {
+      if (callback) callback();
+    };
+    script.onerror = function () {
+      console.error("Failed to load script:", path);
+    };
+    document.head.appendChild(script);
+  }
+
+  (function loadAll(i) {
+    if (i >= scripts.length) return;
+    loadScript(scripts[i], function () {
+      loadAll(i + 1);
+    });
+  })(0);
+})();

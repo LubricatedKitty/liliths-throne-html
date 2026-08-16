@@ -1,0 +1,162 @@
+"""Convert official res/weapons/**/*.xml into js/items/weapons.js.
+
+IDs match Java Util.getExternalFilesById('res/weapons'):
+  res/weapons/{author}/{folder}/file.xml -> {author}_{folder}_{file}
+"""
+from __future__ import annotations
+
+import json
+import re
+from html import unescape
+from pathlib import Path
+import xml.etree.ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[2]
+SRC = ROOT / "Liliths Throne v0.4.10" / "res" / "weapons"
+DEST = ROOT / "Liliths Throne HTML" / "js" / "items" / "weapons.js"
+
+WS = re.compile(r"\s+")
+
+
+def collapse(text: str) -> str:
+    return WS.sub(" ", unescape(text or "")).strip()
+
+
+def el_text(parent: ET.Element | None, tag: str, default: str = "") -> str:
+    if parent is None:
+        return default
+    el = parent.find(tag)
+    if el is None:
+        return default
+    return collapse("".join(el.itertext()))
+
+
+def el_bool(parent: ET.Element | None, tag: str, default: bool = False) -> bool:
+    raw = el_text(parent, tag, "")
+    if raw == "":
+        return default
+    return raw.lower() == "true"
+
+
+def el_int(parent: ET.Element | None, tag: str, default: int = 0) -> int:
+    raw = el_text(parent, tag, "")
+    if raw == "":
+        return default
+    try:
+        return int(float(raw))
+    except ValueError:
+        return default
+
+
+def texts_under(parent: ET.Element | None, *tags: str) -> list[str]:
+    if parent is None:
+        return []
+    out = []
+    for tag in tags:
+        for el in parent.findall(tag):
+            t = collapse("".join(el.itertext()))
+            if t:
+                out.append(t)
+    return out
+
+
+def attr_bool(el: ET.Element | None, name: str, default: bool) -> bool:
+    if el is None or el.get(name) is None:
+        return default
+    return el.get(name).lower() == "true"
+
+
+def official_id(xml_path: Path) -> str:
+    rel = xml_path.relative_to(SRC)
+    parts = list(rel.parts[:-1]) + [rel.stem]
+    return "_".join(parts)
+
+
+def parse_weapon(xml_path: Path) -> dict:
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+    core = root.find("coreAttributes")
+    if core is None:
+        raise ValueError(f"no coreAttributes in {xml_path}")
+
+    name_el = core.find("name")
+    plural_el = core.find("namePlural")
+    tooltip = el_text(core, "attackTooltipDescription")
+    variance = el_text(core, "damageVariance", "MEDIUM").upper()
+    if variance not in ("NONE", "LOW", "MEDIUM", "HIGH"):
+        variance = "MEDIUM"
+
+    types = []
+    dt = core.find("availableDamageTypes")
+    if dt is not None:
+        for child in dt.findall("damageType"):
+            t = collapse("".join(child.itertext())).upper()
+            if t:
+                types.append(t)
+    if not types:
+        types = ["PHYSICAL"]
+
+    tags = []
+    tag_el = core.find("itemTags")
+    if tag_el is not None:
+        for child in tag_el.findall("tag"):
+            t = collapse("".join(child.itertext()))
+            if t:
+                tags.append(t)
+
+    wid = official_id(xml_path)
+    author = xml_path.relative_to(SRC).parts[0]
+    return {
+        "id": wid,
+        "author": author,
+        "name": el_text(core, "name") or xml_path.stem.replace("_", " "),
+        "namePlural": el_text(core, "namePlural"),
+        "pluralByDefault": attr_bool(plural_el, "pluralByDefault", False),
+        "appendDamageName": attr_bool(name_el, "appendDamageName", True),
+        "determiner": el_text(core, "determiner"),
+        "description": el_text(core, "description"),
+        "melee": el_bool(core, "melee", True),
+        "twoHanded": el_bool(core, "twoHanded", False),
+        "oneShot": el_bool(core, "oneShotWeapon", False),
+        "value": el_int(core, "value", 0),
+        "rarity": el_text(core, "rarity", "COMMON").upper() or "COMMON",
+        "attackDescriptor": el_text(core, "attackDescriptor", "strike") or "strike",
+        "attackTooltip": tooltip,
+        "damage": el_int(core, "damage", 0),
+        "variance": variance,
+        "arcaneCost": el_int(core, "arcaneCost", 0),
+        "physicalResistance": el_int(core, "physicalResistance", 0),
+        "damageTypes": types,
+        "tags": tags,
+        "equipText": el_text(core, "equipText"),
+        "unequipText": el_text(core, "unequipText"),
+        "hitTexts": texts_under(root.find("hitDescriptions"), "hitText"),
+        "missTexts": texts_under(root.find("missDescriptions"), "missText"),
+    }
+
+
+def main() -> None:
+    files = sorted(SRC.rglob("*.xml"))
+    if not files:
+        raise SystemExit(f"No weapon XML under {SRC}")
+    catalog = {}
+    for path in files:
+        weapon = parse_weapon(path)
+        if weapon["id"] in catalog:
+            raise SystemExit(f"duplicate weapon id {weapon['id']}")
+        catalog[weapon["id"]] = weapon
+    DEST.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(catalog, ensure_ascii=False, indent=2)
+    DEST.write_text(
+        "/* Generated by tools/convert_weapons.py from official res/weapons. Do not edit by hand. */\n"
+        "LT.WEAPONS = "
+        + payload
+        + ";\nLT.WEAPON_IDS = Object.keys(LT.WEAPONS);\n",
+        encoding="utf-8",
+    )
+    print("weapons", len(catalog), "kb", round(DEST.stat().st_size / 1024, 1))
+    print("sample", ", ".join(list(catalog)[:5]))
+
+
+if __name__ == "__main__":
+    main()
