@@ -23,7 +23,16 @@
       this.visible = true; // Could a character make out what's under this slot? (e.g. a bra under a shirt)
       this.coveredBy = null;
       this.flags = {};
-  }}
+      this.owner = null;
+    }
+    get owner() {
+      return this.owner
+    }
+    set owner(id) {
+      this.owner = id
+    }
+
+  }
   LT.SLOTS = [
     new Slot("head", "Head"),
     new Slot("eyes", "Eyes"),
