@@ -63,8 +63,10 @@
     var nameColour =
       femininity < 40 ? Colour.MASCULINE : femininity > 60 ? Colour.FEMININE : Colour.ANDROGYNOUS;
 
-    var hp = pct(player && player.health, player && player.maxHealth, 100);
-    var aura = pct(player && player.mana, player && player.maxMana, 100);
+    var health = player && player.health != null ? Math.floor(player.health) : null;
+    var mana = player && player.mana != null ? Math.floor(player.mana) : null;
+    var hp = pct(health, player && player.maxHealth, 100);
+    var aura = pct(mana, player && player.maxMana, 100);
     var xp = pct(player && player.experience, player && player.experienceForLevel, 0);
 
     root.innerHTML =
@@ -80,8 +82,8 @@
       " " +
       escapeHtml(race) +
       "</p>" +
-      bar("Health", hp, Colour.ATTRIBUTE_HEALTH, LT.uiIcon("healthIcon.svg"), player && player.health, player && player.maxHealth) +
-      bar("Aura", aura, Colour.ATTRIBUTE_MANA, LT.uiIcon("manaIcon.svg"), player && player.mana, player && player.maxMana) +
+      bar("Health", hp, Colour.ATTRIBUTE_HEALTH, LT.uiIcon("healthIcon.svg"), health, player && player.maxHealth) +
+      bar("Aura", aura, Colour.ATTRIBUTE_MANA, LT.uiIcon("manaIcon.svg"), mana, player && player.maxMana) +
       bar("Experience", xp, Colour.ATTRIBUTE_EXPERIENCE, LT.uiIcon("experienceIcon.svg"), player && player.experience, player && player.experienceForLevel) +
       "</div>" +
       '<div class="attribute-container"><div class="attr-row">' +
