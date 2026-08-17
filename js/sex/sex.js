@@ -2098,9 +2098,11 @@
       this.finished = true;
       return;
     }
-    var partnerAct = this.pickPartnerAction();
-    if (partnerAct && partnerAct.id !== "stop_sex") {
-      lines.push("<p>" + runAction(this.partner, this.player, partnerAct) + "</p>");
+    if (act.type !== "STOP_ONGOING") {
+        var partnerAct = this.pickPartnerAction();
+        if (partnerAct && partnerAct.id !== "stop_sex") {
+          lines.push("<p>" + runAction(this.partner, this.player, partnerAct) + "</p>");
+        }
     }
     this.turn += 1;
     this.lastResolution = lines.join("");
