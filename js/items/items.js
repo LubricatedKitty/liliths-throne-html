@@ -14,6 +14,8 @@
       this.race = opts.race || bugreportmsg
       this.fem = opts.fem || bugreportmsg
       this.masc = opts.masc || bugreportmsg
+      this.tags = {}
+      this.flags = {}
     }
   }
 
