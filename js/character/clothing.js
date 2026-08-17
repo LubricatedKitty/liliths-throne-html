@@ -2,25 +2,52 @@
   function C(id, name, slot, colour, colourName, covers) {
     return { id: id, name: name, slot: slot, colour: colour, colourName: colourName, covers: covers || [slot] };
   }
-
+  class Clothing {
+    constructor(id, name, slot, colour, colourName, covers) {
+      this.id = id;
+      this.name = name;
+      this.slot = slot;
+      this.colour = colour;
+      this.colourName = colourName;
+      this.covers = covers || [slot];
+    }
+  }
+  class Slot {
+    constructor(id,label,active) {
+      this.id = id;
+      this.label = label;
+      this.active = active === undefined ? true : active;
+      this.covered = false;
+      this.visible = true; // Could a character make out what's under this slot? (e.g. a bra under a shirt)
+      this.coveredBy = null;
+      this.flags = {};
+  }}
   LT.SLOTS = [
-    { id: "head", label: "Head" },
-    { id: "eyes", label: "Eyes" },
-    { id: "mouth", label: "Mouth" },
-    { id: "neck", label: "Neck" },
-    { id: "torsoOver", label: "Over-torso" },
-    { id: "torso", label: "Torso" },
-    { id: "chest", label: "Chest" },
-    { id: "stomach", label: "Stomach" },
-    { id: "wrist", label: "Wrists" },
-    { id: "finger", label: "Fingers" },
-    { id: "hand", label: "Hands" },
-    { id: "hips", label: "Hips" },
-    { id: "groin", label: "Groin" },
-    { id: "leg", label: "Legs" },
-    { id: "sock", label: "Socks" },
-    { id: "ankle", label: "Ankles" },
-    { id: "foot", label: "Feet" },
+    new Slot("head", "Head"),
+    new Slot("eyes", "Eyes"),
+    new Slot("mouth", "Mouth"),
+    new Slot("neck", "Neck"),
+    new Slot("torsoOver", "Over-torso"),
+    new Slot("torso", "Torso"),
+    new Slot("chest", "Chest"),
+    new Slot("stomach", "Stomach"),
+    new Slot("wrist", "Wrists"),
+    new Slot("finger", "Fingers"),
+    new Slot("hand", "Hands"),
+    new Slot("hips", "Hips"),
+    new Slot("groin", "Groin"),
+    new Slot("leg", "Legs"),
+    new Slot("thigh", "Thighs"),
+    new Slot("calf", "Calves"),
+    new Slot("sock", "Socks"),
+    new Slot("ankle", "Ankles"),
+    new Slot("foot", "Feet"),
+    new Slot("nipple", "Nipples"),
+    new Slot("anus", "Anus"),
+    new Slot("tail", "Tail",false),
+    new Slot("penis", "Penis", false),
+    new Slot("vagina", "Vagina", false),
+    new Slot("clit", "Clitoris", false),
   ];
 
   var CAT = (LT.CLOTHING = {});
@@ -29,52 +56,52 @@
     return item;
   }
 
-  add(C("briefs", "briefs", "groin", "#ffffff", "white"));
-  add(C("boxers", "boxers", "groin", "#222222", "black"));
-  add(C("panties", "panties", "groin", "#ffffff", "white"));
-  add(C("thong", "thong", "groin", "#222222", "black"));
-  add(C("lacy_panties", "lacy panties", "groin", "#c0392b", "red"));
-  add(C("plunge_bra", "plunge bra", "chest", "#ffffff", "white"));
-  add(C("plunge_bra_black", "plunge bra", "chest", "#222222", "black"));
-  add(C("crop_bra", "croptop bra", "chest", "#ffffff", "white"));
-  add(C("lacy_bra", "lacy plunge bra", "chest", "#c0392b", "red"));
-  add(C("fullcup_bra", "fullcup bra", "chest", "#222222", "black"));
-  add(C("shirt_long", "long-sleeved shirt", "torso", "#ffffff", "white", ["torso", "chest"]));
-  add(C("shirt_short", "short-sleeved shirt", "torso", "#ffffff", "white", ["torso", "chest"]));
-  add(C("tshirt", "t-shirt", "torso", "#6f9be3", "light blue", ["torso", "chest"]));
-  add(C("blouse", "blouse", "torso", "#6f9be3", "light blue", ["torso", "chest"]));
-  add(C("skater_dress", "skater dress", "torso", "#222222", "black", ["torso", "chest", "groin", "leg"]));
-  add(C("slip_dress", "slip dress", "torso", "#7b2d3b", "burgundy", ["torso", "chest", "groin", "leg"]));
-  add(C("suit_jacket", "suit jacket", "torsoOver", "#222222", "black"));
-  add(C("hoodie", "hoodie", "torsoOver", "#222222", "black"));
-  add(C("jumper", "ribbed jumper", "torsoOver", "#777777", "grey"));
-  add(C("cardigan", "open-front cardigan", "torsoOver", "#222222", "black"));
-  add(C("winter_coat", "winter coat", "torsoOver", "#222222", "black"));
-  add(C("trousers", "trousers", "leg", "#222222", "black", ["leg", "groin"]));
-  add(C("jeans", "jeans", "leg", "#6b7c93", "blue-grey", ["leg", "groin"]));
-  add(C("cargo", "cargo trousers", "leg", "#222222", "black", ["leg", "groin"]));
-  add(C("skirt", "skirt", "leg", "#222222", "black", ["leg", "groin"]));
-  add(C("yoga", "yoga pants", "leg", "#f5a8ff", "pink", ["leg", "groin"]));
-  add(C("socks", "socks", "sock", "#222222", "black"));
-  add(C("socks_white", "socks", "sock", "#ffffff", "white"));
-  add(C("trainer_socks", "trainer socks", "sock", "#ffffff", "white"));
-  add(C("pantyhose", "pantyhose", "sock", "#222222", "black"));
-  add(C("kneehigh", "knee-high socks", "sock", "#ffffff", "white"));
-  add(C("smart_shoes", "smart shoes", "foot", "#222222", "black"));
-  add(C("heels", "heels", "foot", "#222222", "black"));
-  add(C("stilettos", "stiletto heels", "foot", "#7b2d3b", "burgundy"));
-  add(C("skaters", "skater shoes", "foot", "#c0392b", "red"));
-  add(C("trainers", "trainers", "foot", "#ffffff", "white"));
-  add(C("tie", "tie", "neck", "#c0392b", "red"));
-  add(C("heart_necklace", "heart necklace", "neck", "#c0c0c0", "silver"));
-  add(C("heart_necklace_gold", "heart necklace", "neck", "#e3c66f", "gold"));
-  add(C("scarf", "scarf", "neck", "#222222", "black"));
-  add(C("ring_gold", "ring", "finger", "#e3c66f", "gold"));
-  add(C("ring_silver", "ring", "finger", "#c0c0c0", "silver"));
-  add(C("watch_gold", "watch", "wrist", "#e3c66f", "gold"));
-  add(C("watch_silver", "watch", "wrist", "#c0c0c0", "silver"));
-  add(C("watch_pink", "women's watch", "wrist", "#f5a8ff", "pink"));
-  add(C("watch_black", "women's watch", "wrist", "#222222", "black"));
+  add(new Clothing("briefs", "briefs", "groin", "#ffffff", "white"));
+  add(new Clothing("boxers", "boxers", "groin", "#222222", "black"));
+  add(new Clothing("panties", "panties", "groin", "#ffffff", "white"));
+  add(new Clothing("thong", "thong", "groin", "#222222", "black"));
+  add(new Clothing("lacy_panties", "lacy panties", "groin", "#c0392b", "red"));
+  add(new Clothing("plunge_bra", "plunge bra", "chest", "#ffffff", "white"));
+  add(new Clothing("plunge_bra_black", "plunge bra", "chest", "#222222", "black"));
+  add(new Clothing("crop_bra", "croptop bra", "chest", "#ffffff", "white"));
+  add(new Clothing("lacy_bra", "lacy plunge bra", "chest", "#c0392b", "red"));
+  add(new Clothing("fullcup_bra", "fullcup bra", "chest", "#222222", "black"));
+  add(new Clothing("shirt_long", "long-sleeved shirt", "torso", "#ffffff", "white", ["torso", "chest"]));
+  add(new Clothing("shirt_short", "short-sleeved shirt", "torso", "#ffffff", "white", ["torso", "chest"]));
+  add(new Clothing("tshirt", "t-shirt", "torso", "#6f9be3", "light blue", ["torso", "chest"]));
+  add(new Clothing("blouse", "blouse", "torso", "#6f9be3", "light blue", ["torso", "chest"]));
+  add(new Clothing("skater_dress", "skater dress", "torso", "#222222", "black", ["torso", "chest", "groin", "leg"]));
+  add(new Clothing("slip_dress", "slip dress", "torso", "#7b2d3b", "burgundy", ["torso", "chest", "groin", "leg"]));
+  add(new Clothing("suit_jacket", "suit jacket", "torsoOver", "#222222", "black"));
+  add(new Clothing("hoodie", "hoodie", "torsoOver", "#222222", "black"));
+  add(new Clothing("jumper", "ribbed jumper", "torsoOver", "#777777", "grey"));
+  add(new Clothing("cardigan", "open-front cardigan", "torsoOver", "#222222", "black"));
+  add(new Clothing("winter_coat", "winter coat", "torsoOver", "#222222", "black"));
+  add(new Clothing("trousers", "trousers", "leg", "#222222", "black", ["leg", "groin"]));
+  add(new Clothing("jeans", "jeans", "leg", "#6b7c93", "blue-grey", ["leg", "groin"]));
+  add(new Clothing("cargo", "cargo trousers", "leg", "#222222", "black", ["leg", "groin"]));
+  add(new Clothing("skirt", "skirt", "leg", "#222222", "black", ["leg", "groin"]));
+  add(new Clothing("yoga", "yoga pants", "leg", "#f5a8ff", "pink", ["leg", "groin"]));
+  add(new Clothing("socks", "socks", "sock", "#222222", "black"));
+  add(new Clothing("socks_white", "socks", "sock", "#ffffff", "white"));
+  add(new Clothing("trainer_socks", "trainer socks", "sock", "#ffffff", "white"));
+  add(new Clothing("pantyhose", "pantyhose", "sock", "#222222", "black"));
+  add(new Clothing("kneehigh", "knee-high socks", "sock", "#ffffff", "white"));
+  add(new Clothing("smart_shoes", "smart shoes", "foot", "#222222", "black"));
+  add(new Clothing("heels", "heels", "foot", "#222222", "black"));
+  add(new Clothing("stilettos", "stiletto heels", "foot", "#7b2d3b", "burgundy"));
+  add(new Clothing("skaters", "skater shoes", "foot", "#c0392b", "red"));
+  add(new Clothing("trainers", "trainers", "foot", "#ffffff", "white"));
+  add(new Clothing("tie", "tie", "neck", "#c0392b", "red"));
+  add(new Clothing("heart_necklace", "heart necklace", "neck", "#c0c0c0", "silver"));
+  add(new Clothing("heart_necklace_gold", "heart necklace", "neck", "#e3c66f", "gold"));
+  add(new Clothing("scarf", "scarf", "neck", "#222222", "black"));
+  add(new Clothing("ring_gold", "ring", "finger", "#e3c66f", "gold"));
+  add(new Clothing("ring_silver", "ring", "finger", "#c0c0c0", "silver"));
+  add(new Clothing("watch_gold", "watch", "wrist", "#e3c66f", "gold"));
+  add(new Clothing("watch_silver", "watch", "wrist", "#c0c0c0", "silver"));
+  add(new Clothing("watch_pink", "women's watch", "wrist", "#f5a8ff", "pink"));
+  add(new Clothing("watch_black", "women's watch", "wrist", "#222222", "black"));
 
   function copy(item) {
     return {

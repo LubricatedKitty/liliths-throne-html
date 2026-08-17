@@ -21,6 +21,7 @@
   }
 
   function slotRow(player, slot) {
+    if (!slot.active) return ""
     var item = player.equipped[slot.id];
     var inner = item
       ? '<div class="inv-item" data-unequip="' +

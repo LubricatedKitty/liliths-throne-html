@@ -17,3 +17,5 @@ desktop.ini
 *.ltjson
 *.ltjsave
 saves/
+buildModloader/
+kittyloader.exe
