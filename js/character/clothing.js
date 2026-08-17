@@ -2,10 +2,13 @@
   function C(id, name, slot, colour, colourName, covers) {
     return { id: id, name: name, slot: slot, colour: colour, colourName: colourName, covers: covers || [slot] };
   }
-  class Clothing {
+  class Clothing extends LT.item {
     constructor(id, name, slot, colour, colourName, covers) {
-      this.id = id;
-      this.name = name;
+      opts = {
+        id:id,
+        name:name
+      }
+      super(opts)
       this.slot = slot;
       this.colour = colour;
       this.colourName = colourName;

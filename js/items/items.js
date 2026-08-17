@@ -2,6 +2,20 @@
   function uid(prefix) {
     return prefix + "_" + Math.random().toString(36).slice(2, 8);
   }
+  var bugreportmsg = "Please make a bug report if you see this in normal gameplay"
+  LT.Item = class Item {
+    constructor(opts) {
+      opts = opts || {}
+      this.id = opts.id
+      this.name = opts.name
+      this.description = opts.description || ""
+      this.kind = opts.kind 
+      this.soldBy = opts.soldBy || []
+      this.race = opts.race || bugreportmsg
+      this.fem = opts.fem || bugreportmsg
+      this.masc = opts.masc || bugreportmsg
+    }
+  }
 
   var ITEMS = (LT.ITEMS = {
     innoxia_items_essence_arcane: {
