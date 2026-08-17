@@ -85,14 +85,15 @@
       bar("Experience", xp, Colour.ATTRIBUTE_EXPERIENCE, LT.uiIcon("experienceIcon.svg"), player && player.experience, player && player.experienceForLevel) +
       "</div>" +
       '<div class="attribute-container"><div class="attr-row">' +
-      statIcon("Physique", (player && (typeof LT.effectivePhysique === "function" ? LT.effectivePhysique(player) : player.physique)) || 10, Colour.ATTRIBUTE_PHYSIQUE, LT.uiIcon("strengthIcon.svg")) +
-      statIcon("Arcane", (player && (typeof LT.effectiveArcane === "function" ? LT.effectiveArcane(player) : player.arcane)) || 10, Colour.ATTRIBUTE_ARCANE, LT.uiIcon("intelligenceIcon.svg")) +
-      statIcon("Corruption", (player && (typeof LT.effectiveCorruption === "function" ? LT.effectiveCorruption(player) : player.corruption)) || 0, Colour.ATTRIBUTE_CORRUPTION, LT.uiIcon("corruptionIcon.svg")) +
+      statIcon("Physique", (player && player.physique) || 10, Colour.ATTRIBUTE_PHYSIQUE, LT.uiIcon("strengthIcon.svg")) +
+      statIcon("Arcane", (player && player.arcane) || 10, Colour.ATTRIBUTE_ARCANE, LT.uiIcon("intelligenceIcon.svg")) +
+      statIcon("Corruption", (player && player.corruption) || 0, Colour.ATTRIBUTE_CORRUPTION, LT.uiIcon("corruptionIcon.svg")) +
       '</div><div class="attr-row">' +
       statIcon("Arousal", (player && player.arousal) || 0, Colour.ATTRIBUTE_AROUSAL, LT.uiIcon("arousalIcon.svg")) +
       statIcon("Lust", (player && player.lust) || 0, Colour.ATTRIBUTE_LUST, LT.uiIcon("arousalIcon.svg")) +
       "</div></div>" +
-      '<div class="attribute-container attribute-container-inner effects" id="status-effects"></div>' +
+      '<div class="attribute-container attribute-container-inner effects" id="status-effects">' +
+      '<p class="muted" style="text-align:center;margin:0;padding:8px;">No status effects</p></div>' +
       '<div class="attribute-container clock-box">' +
       '<div class="clock-line"><img src="' +
       LT.uiIcon("calendar.svg") +
@@ -116,7 +117,6 @@
         LT.bindTooltip(el, el.getAttribute("data-tip"));
       })(tips[i]);
     }
-    if (typeof LT.paintStatusEffects === "function") LT.paintStatusEffects(player);
   };
 
   LT.registerAttributes = function () {
@@ -136,7 +136,6 @@
       if (dateEl && typeof LT.formatGameDate === "function") dateEl.textContent = LT.formatGameDate();
       if (typeof LT.updateHouseNpcLocations === "function") LT.updateHouseNpcLocations();
       if (typeof LT.paintCharactersPresent === "function") LT.paintCharactersPresent();
-      if (typeof LT.paintStatusEffects === "function") LT.paintStatusEffects();
     });
     document.addEventListener("lt-content", function () {
       if (LT.game.renderAttributes) LT.paintAttributes();
