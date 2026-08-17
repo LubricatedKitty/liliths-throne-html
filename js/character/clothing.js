@@ -6,7 +6,8 @@
     constructor(id, name, slot, colour, colourName, covers) {
       opts = {
         id:id,
-        name:name
+        name:name,
+        type:"clothing"
       }
       super(opts)
       this.slot = slot;
