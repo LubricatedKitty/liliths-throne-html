@@ -1,4 +1,6 @@
+// Currently a stub, no current use
 (function(){
+    
     class CharSexModule {
         constructor(opts) {
             this.fetishes = opts.fetishes || {}
@@ -19,6 +21,11 @@
             this.seen = {} // {slot:[id]} this tracks who has seen our bodyparts
         }
         
+    }
+    class CharIdentityModule {
+        constructor(opts) {
+
+        }
     }
     LT.Character = class Character {
         constructor(opts) {
