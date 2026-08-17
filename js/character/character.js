@@ -9,6 +9,7 @@
         androgynous: "Unknown",
         feminine: "Unknown",
       };
+      this.raceName = opts.raceName || "human";
       this.surname = "";
       this.gender = LT.Gender.FEMALE;
       this.femininityValue = 70;
@@ -49,7 +50,9 @@
         penisVirgin: true,
         vaginaVirgin: true,
       };
-      this.applyHumanDefaults();
+      if (opts.defaults || true) {
+        this.applyDefaults();
+      }
     }
     initSlots() {
       if (this.gender.hasPenis) {
@@ -93,7 +96,7 @@
         this.femininityValue = 30;
       this.penisPresent = !!(gender && gender.hasPenis);
       this.vaginaPresent = !!(gender && gender.hasVagina);
-      if (changed) this.applyHumanDefaults();
+      if (changed) this.applyDefaults();
     }
 
     hasPenis() {
@@ -116,7 +119,7 @@
       );
     }
 
-    applyHumanDefaults() {
+    applyDefaults() {
       var f = this.isFeminine();
       this.heightCm = f ? 168 : 178;
       this.skin = LT.findById(LT.SKIN, "LIGHT");
@@ -144,7 +147,8 @@
       this.labiaSize = LT.SIZE5[2];
       this.clitorisSize = LT.SIZE5[0];
       if (typeof LT.createBody === "function") {
-        this.body = LT.createBody({
+        var bodyOpts = {
+          race: this.raceName || "HUMAN",
           feminine: f,
           hasPenis:
             this.penisPresent != null
@@ -179,8 +183,9 @@
           vaginaCapacity: this.vaginaCapacity && this.vaginaCapacity.id,
           labiaSize: this.labiaSize,
           clitorisSize: this.clitorisSize,
-          race: "HUMAN",
-        });
+          race: this.raceName || "HUMAN",
+        };
+        this.body = LT.createBody(bodyOpts);
       }
       if (typeof LT.ensureCharacterSystems === "function")
         LT.ensureCharacterSystems(this);
