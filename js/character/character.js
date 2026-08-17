@@ -1,5 +1,5 @@
 (function () {
-    class GameCharacter {
+    class Character {
         constructor(opts) {
         opts = opts || {};
         this.id = opts.id;
@@ -249,5 +249,5 @@
         return this.gender.colour || LT.Colour.ANDROGYNOUS;
         }
     }
-    LT.GameCharacter = GameCharacter;
+    LT.GameCharacter = Character;
 }());
