@@ -21,7 +21,7 @@
       this.uid = prefix + "_" + Math.random().toString(36).slice(2, 8);
     }
     equip() {
-      throw new Error("Not Implemented in generic item class")
+      throw new Error("Not Implemented")
     } 
   }
 
