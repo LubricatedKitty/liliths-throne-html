@@ -2,28 +2,29 @@
   function uid(prefix) {
     return prefix + "_" + Math.random().toString(36).slice(2, 8);
   }
-  var bugreportmsg = "Please make a bug report if you see this in normal gameplay"
+  var bugreportmsg =
+    "Please make a bug report if you see this in normal gameplay";
   LT.Item = class Item {
     constructor(opts) {
-      opts = opts || {}
-      this.id = opts.id
-      this.name = opts.name
-      this.description = opts.description || ""
-      this.kind = opts.kind 
-      this.soldBy = opts.soldBy || []
-      this.race = opts.race || bugreportmsg
-      this.fem = opts.fem || bugreportmsg
-      this.masc = opts.masc || bugreportmsg
-      this.tags = {}
-      this.flags = {}
+      opts = opts || {};
+      this.id = opts.id;
+      this.name = opts.name;
+      this.description = opts.description || "";
+      this.kind = opts.kind;
+      this.soldBy = opts.soldBy || [];
+      this.race = opts.race || bugreportmsg;
+      this.fem = opts.fem || bugreportmsg;
+      this.masc = opts.masc || bugreportmsg;
+      this.tags = {};
+      this.flags = {};
     }
     genUid(prefix) {
       this.uid = prefix + "_" + Math.random().toString(36).slice(2, 8);
     }
     equip() {
-      throw new Error("Not Implemented")
-    } 
-  }
+      throw new Error("Not Implemented");
+    }
+  };
 
   var ITEMS = (LT.ITEMS = {
     innoxia_items_essence_arcane: new Item({
@@ -31,7 +32,8 @@
       kind: "essence",
       name: "bottled arcane essence",
       value: 0,
-      description: "A small vial containing a swirling pink shard of arcane essence. Drinking it returns the essence to your aura.",
+      description:
+        "A small vial containing a swirling pink shard of arcane essence. Drinking it returns the essence to your aura.",
     }),
     innoxia_bdsm_metal_collar: new Item({
       id: "innoxia_bdsm_metal_collar",
@@ -39,7 +41,8 @@
       name: "metal collar",
       value: 2500,
       soldBy: ["finch"],
-      description: "A sturdy metal slave collar. The ring on the front glows when held near a wanted criminal.",
+      description:
+        "A sturdy metal slave collar. The ring on the front glows when held near a wanted criminal.",
     }),
     innoxia_race_cat_felines_fancy: new Item({
       id: "innoxia_race_cat_felines_fancy",
@@ -50,7 +53,8 @@
       race: "cat-morph",
       fem: "cat-girl",
       masc: "cat-boy",
-      description: "A delicate glass bottle filled with a thick, cream-like liquid.",
+      description:
+        "A delicate glass bottle filled with a thick, cream-like liquid.",
     }),
     innoxia_race_dog_canine_crush: new Item({
       id: "innoxia_race_dog_canine_crush",
@@ -116,7 +120,8 @@
       race: "harpy",
       fem: "harpy",
       masc: "harpy",
-      description: "A bright pink lollipop, with a little ball of gum at its core. Although it doesn't look out of the ordinary, it's somewhat unusual in the fact that it has an incredibly strong smell of bubblegum.",
+      description:
+        "A bright pink lollipop, with a little ball of gum at its core. Although it doesn't look out of the ordinary, it's somewhat unusual in the fact that it has an incredibly strong smell of bubblegum.",
     }),
     innoxia_race_human_vanilla_water: new Item({
       id: "innoxia_race_human_vanilla_water",
@@ -138,7 +143,8 @@
       race: "demon",
       fem: "succubus",
       masc: "incubus",
-      description: "A bottle of glowing purple liquid. The label simply reads 'Lilith's Gift'.",
+      description:
+        "A bottle of glowing purple liquid. The label simply reads 'Lilith's Gift'.",
     }),
     REJUVENATION_POTION: new Item({
       id: "REJUVENATION_POTION",
@@ -146,7 +152,8 @@
       name: "rejuvenation potion",
       value: 1000,
       soldBy: ["ralph", "vicky"],
-      description: "Guaranteed to restore over-used orifices and refill all of your fluids.",
+      description:
+        "Guaranteed to restore over-used orifices and refill all of your fluids.",
     }),
     innoxia_toy_dildo: new Item({
       id: "innoxia_toy_dildo",
@@ -193,14 +200,16 @@
       kind: "consumable",
       name: "unrefined fetish",
       value: 500,
-      description: "A cloudy vial of unrefined fetish-infused fluid. Official fetish potions are not fully in this build.",
+      description:
+        "A cloudy vial of unrefined fetish-infused fluid. Official fetish potions are not fully in this build.",
     }),
     DYE_BRUSH: new Item({
       id: "DYE_BRUSH",
       kind: "consumable",
       name: "dye-brush",
       value: 150,
-      description: "A small brush used to recolour clothing. Dyes are not in this build.",
+      description:
+        "A small brush used to recolour clothing. Dyes are not in this build.",
     }),
   });
 
@@ -216,9 +225,9 @@
   LT.makeItem = function (id) {
     var t = ITEMS[id];
     if (!t) return null;
-    var item = structuredClone(item)
-    item.genUid(t.kind || "item")
-    return item
+    var item = structuredClone(item);
+    item.genUid(t.kind || "item");
+    return item;
   };
 
   LT.shopItemIds = function (seller) {
@@ -279,7 +288,9 @@
 
   LT.applyTfItem = function (player, type) {
     if (!player || !type || type.kind !== "tf") return "";
-    var fem = player.isFeminine ? player.isFeminine() : !!(player.gender && player.gender.hasBreasts);
+    var fem = player.isFeminine
+      ? player.isFeminine()
+      : !!(player.gender && player.gender.hasBreasts);
     player.raceName = type.race;
     player.fullRace = fem ? type.fem : type.masc;
     if (player.getRaceName) {
@@ -293,7 +304,13 @@
       "<p>You drink the " +
       type.name +
       ". A rush of arcane energy runs through you, and your body settles into that of " +
-      (player.fullRace.indexOf("a") === 0 || player.fullRace.indexOf("e") === 0 || player.fullRace.indexOf("i") === 0 || player.fullRace.indexOf("o") === 0 || player.fullRace.indexOf("u") === 0 ? "an " : "a ") +
+      (player.fullRace.indexOf("a") === 0 ||
+      player.fullRace.indexOf("e") === 0 ||
+      player.fullRace.indexOf("i") === 0 ||
+      player.fullRace.indexOf("o") === 0 ||
+      player.fullRace.indexOf("u") === 0
+        ? "an "
+        : "a ") +
       player.fullRace +
       ".</p>"
     );
@@ -305,11 +322,18 @@
     if (!type) return "You cannot use that.";
     if (type.kind === "essence") {
       LT.removeItemByUid(player, item.uid);
-      return LT.incrementEssenceCount(1, true) || "<p>You drink the bottled essence.</p>";
+      return (
+        LT.incrementEssenceCount(1, true) ||
+        "<p>You drink the bottled essence.</p>"
+      );
     }
     if (type.kind === "tf") {
       var tfHtml = "";
-      if (item.effects && item.effects.length && typeof LT.applyRacialEffects === "function") {
+      if (
+        item.effects &&
+        item.effects.length &&
+        typeof LT.applyRacialEffects === "function"
+      ) {
         tfHtml = LT.applyRacialEffects(player, item);
         if (!tfHtml) tfHtml = LT.applyTfItem(player, type);
       } else {
@@ -323,7 +347,11 @@
       return "<p>You use the " + type.name + ". You feel refreshed.</p>";
     }
     if (type.kind === "toy") {
-      return "<p>You turn the " + type.name + " over in your hands. It will be more useful during sex than here in your bag.</p>";
+      return (
+        "<p>You turn the " +
+        type.name +
+        " over in your hands. It will be more useful during sex than here in your bag.</p>"
+      );
     }
     if (type.kind === "gift") {
       return "<p>A neatly wrapped gift. Someone special might appreciate this more than you opening it yourself.</p>";
@@ -344,7 +372,9 @@
     if (!type) return "<p>That is not for sale.</p>";
     var price = LT.itemBuyPrice(id);
     if (typeof LT.getMoney === "function" && LT.getMoney() < price) {
-      return "<p>You cannot afford the " + type.name + " (" + price + " flames).</p>";
+      return (
+        "<p>You cannot afford the " + type.name + " (" + price + " flames).</p>"
+      );
     }
     if (typeof LT.incrementMoney === "function") LT.incrementMoney(-price);
     LT.addItem(player, id);
@@ -355,17 +385,29 @@
     var ids = LT.shopItemIds(seller);
     var html = intro || "";
     var i;
-    html += "<p>You have <b>£" + ((LT.game.player && LT.game.player.money) || 0) + "</b>.</p><ul>";
+    html +=
+      "<p>You have <b>£" +
+      ((LT.game.player && LT.game.player.money) || 0) +
+      "</b>.</p><ul>";
     for (i = 0; i < ids.length; i++) {
       var t = ITEMS[ids[i]];
-      html += "<li><b>" + t.name + "</b> — " + LT.itemBuyPrice(ids[i]) + " flames. " + (t.description || "") + "</li>";
+      html +=
+        "<li><b>" +
+        t.name +
+        "</b> — " +
+        LT.itemBuyPrice(ids[i]) +
+        " flames. " +
+        (t.description || "") +
+        "</li>";
     }
     html += "</ul>";
     return html;
   };
 
   LT.itemShopResponses = function (seller, leaveNode) {
-    var list = [new LT.Response("Leave", "Step away from the counter.", leaveNode)];
+    var list = [
+      new LT.Response("Leave", "Step away from the counter.", leaveNode),
+    ];
     var ids = LT.shopItemIds(seller);
     var i;
     for (i = 0; i < ids.length; i++) {
@@ -374,13 +416,22 @@
         var price = LT.itemBuyPrice(id);
         var title = type.name + " (" + price + ")";
         if (typeof LT.getMoney === "function" && LT.getMoney() < price) {
-          list.push(new LT.Response(title, "You cannot afford that.", null).disable("You need " + price + " flames."));
+          list.push(
+            new LT.Response(title, "You cannot afford that.", null).disable(
+              "You need " + price + " flames.",
+            ),
+          );
         } else {
           list.push(
-            new LT.Response(title, "Buy " + type.name + " for " + price + " flames.", null, function () {
-              LT.game.textStart = LT.buyItem(LT.game.player, id);
-              LT.game.setContent(LT.game.currentNode);
-            }),
+            new LT.Response(
+              title,
+              "Buy " + type.name + " for " + price + " flames.",
+              null,
+              function () {
+                LT.game.textStart = LT.buyItem(LT.game.player, id);
+                LT.game.setContent(LT.game.currentNode);
+              },
+            ),
           );
         }
       })(ids[i]);

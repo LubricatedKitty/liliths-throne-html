@@ -1,30 +1,41 @@
 (function () {
-
   function statusPart(ch, key) {
     if (typeof LT.statusBonus !== "function") return 0;
-    return (LT.statusBonus(ch)[key] || 0);
+    return LT.statusBonus(ch)[key] || 0;
   }
 
   LT.maxHealthOf = function (ch) {
-    var bonus = ((ch.enchantBonus && ch.enchantBonus.health) || 0) + statusPart(ch, "health");
-    return 10 + 5 * (ch.level || 1) + 2 * (LT.effectivePhysique(ch) || 10) + bonus;
+    var bonus =
+      ((ch.enchantBonus && ch.enchantBonus.health) || 0) +
+      statusPart(ch, "health");
+    return (
+      10 + 5 * (ch.level || 1) + 2 * (LT.effectivePhysique(ch) || 10) + bonus
+    );
   };
 
   LT.maxManaOf = function (ch) {
-    var bonus = ((ch.enchantBonus && ch.enchantBonus.mana) || 0) + statusPart(ch, "mana");
+    var bonus =
+      ((ch.enchantBonus && ch.enchantBonus.mana) || 0) + statusPart(ch, "mana");
     return 5 + 2 * (ch.level || 1) + 5 * (LT.effectiveArcane(ch) || 10) + bonus;
   };
 
   LT.effectivePhysique = function (ch) {
-    return (ch.physique || 10) + ((ch.enchantBonus && ch.enchantBonus.physique) || 0);
+    return (
+      (ch.physique || 10) + ((ch.enchantBonus && ch.enchantBonus.physique) || 0)
+    );
   };
 
   LT.effectiveArcane = function (ch) {
-    return (ch.arcane || 10) + ((ch.enchantBonus && ch.enchantBonus.arcane) || 0);
+    return (
+      (ch.arcane || 10) + ((ch.enchantBonus && ch.enchantBonus.arcane) || 0)
+    );
   };
 
   LT.effectiveCorruption = function (ch) {
-    return (ch.corruption || 0) + ((ch.enchantBonus && ch.enchantBonus.corruption) || 0);
+    return (
+      (ch.corruption || 0) +
+      ((ch.enchantBonus && ch.enchantBonus.corruption) || 0)
+    );
   };
 
   LT.experienceNeeded = function (level) {
@@ -33,7 +44,10 @@
 
   LT.unarmedDamage = function (ch) {
     var bonus = (ch && ch.enchantBonus && ch.enchantBonus.damageUnarmed) || 0;
-    return Math.max(1, 2 + Math.floor((LT.effectivePhysique(ch) || 10) / 5) + bonus);
+    return Math.max(
+      1,
+      2 + Math.floor((LT.effectivePhysique(ch) || 10) / 5) + bonus,
+    );
   };
 
   LT.refreshVitals = function (ch, fill) {
@@ -64,7 +78,10 @@
       ";'>" +
       amount +
       "</b> experience!</p>";
-    while ((p.level || 1) < 50 && p.experience >= LT.experienceNeeded(p.level)) {
+    while (
+      (p.level || 1) < 50 &&
+      p.experience >= LT.experienceNeeded(p.level)
+    ) {
       p.experience -= LT.experienceNeeded(p.level);
       p.level += 1;
       LT.refreshVitals(p);
@@ -134,13 +151,26 @@
         p.labiaSize.name +
         " labia.";
     } else if (p.hasPenis()) {
-      genitals = she.charAt(0).toUpperCase() + she.slice(1) + " has a " + p.penisLength + "-cm penis and " + p.testicleSize.name + " testicles.";
+      genitals =
+        she.charAt(0).toUpperCase() +
+        she.slice(1) +
+        " has a " +
+        p.penisLength +
+        "-cm penis and " +
+        p.testicleSize.name +
+        " testicles.";
     } else if (p.hasVagina()) {
-      genitals = she.charAt(0).toUpperCase() + she.slice(1) + " has a vagina with " + p.labiaSize.name + " labia.";
+      genitals =
+        she.charAt(0).toUpperCase() +
+        she.slice(1) +
+        " has a vagina with " +
+        p.labiaSize.name +
+        " labia.";
     } else {
-      genitals = she.charAt(0).toUpperCase() + she.slice(1) + " has a smooth mound.";
+      genitals =
+        she.charAt(0).toUpperCase() + she.slice(1) + " has a smooth mound.";
     }
-    var html = (
+    var html =
       "<p>You are " +
       LT.article(fem.name.toLowerCase()) +
       " <span style='color:" +
@@ -192,27 +222,44 @@
       p.hipSize.name +
       ". " +
       genitals +
-      "</p>"
-    );
+      "</p>";
     if (typeof LT.isVisiblyPregnant === "function" && LT.isVisiblyPregnant(p)) {
       html +=
         "<p>Your belly is visibly swollen. You are <b style='color:" +
         LT.Colour.GENERIC_SEX +
         ";'>" +
-        (LT.hasStatusEffect(p, "PREGNANT_3") ? "ready to give birth" : LT.hasStatusEffect(p, "PREGNANT_2") ? "heavily pregnant" : "pregnant") +
+        (LT.hasStatusEffect(p, "PREGNANT_3")
+          ? "ready to give birth"
+          : LT.hasStatusEffect(p, "PREGNANT_2")
+            ? "heavily pregnant"
+            : "pregnant") +
         "</b>.</p>";
     }
     if (p.body) {
       var extras = [];
       function partLabel(id) {
         var t = LT.PART_TYPE && LT.PART_TYPE[id];
-        return t ? t.name : String(id || "").toLowerCase().replace(/_/g, "-");
+        return t
+          ? t.name
+          : String(id || "")
+              .toLowerCase()
+              .replace(/_/g, "-");
       }
-      if (p.body.face && p.body.face.type && p.body.face.type !== "HUMAN") extras.push("a " + partLabel(p.body.face.type) + " face");
-      if (p.body.ear && p.body.ear.type && p.body.ear.type !== "HUMAN" && p.body.ear.type !== "NONE") extras.push(partLabel(p.body.ear.type) + " ears");
-      if (p.body.horn && p.body.horn.type && p.body.horn.type !== "NONE") extras.push(partLabel(p.body.horn.type) + " horns");
-      if (p.body.tail && p.body.tail.type && p.body.tail.type !== "NONE") extras.push("a " + partLabel(p.body.tail.type) + " tail");
-      if (p.body.wing && p.body.wing.type && p.body.wing.type !== "NONE") extras.push(partLabel(p.body.wing.type) + " wings");
+      if (p.body.face && p.body.face.type && p.body.face.type !== "HUMAN")
+        extras.push("a " + partLabel(p.body.face.type) + " face");
+      if (
+        p.body.ear &&
+        p.body.ear.type &&
+        p.body.ear.type !== "HUMAN" &&
+        p.body.ear.type !== "NONE"
+      )
+        extras.push(partLabel(p.body.ear.type) + " ears");
+      if (p.body.horn && p.body.horn.type && p.body.horn.type !== "NONE")
+        extras.push(partLabel(p.body.horn.type) + " horns");
+      if (p.body.tail && p.body.tail.type && p.body.tail.type !== "NONE")
+        extras.push("a " + partLabel(p.body.tail.type) + " tail");
+      if (p.body.wing && p.body.wing.type && p.body.wing.type !== "NONE")
+        extras.push(partLabel(p.body.wing.type) + " wings");
       if (extras.length) {
         html += "<p>Racial features: " + extras.join(", ") + ".</p>";
       }
@@ -223,7 +270,12 @@
         var rec = p.makeup[key];
         if (rec && rec.colour && rec.colour !== "NONE") {
           var slot = LT.findById(LT.MAKEUP_SLOTS, key);
-          worn.push((slot ? slot.name.toLowerCase() : key.toLowerCase()) + " (" + rec.colour.toLowerCase().replace(/_/g, " ") + ")");
+          worn.push(
+            (slot ? slot.name.toLowerCase() : key.toLowerCase()) +
+              " (" +
+              rec.colour.toLowerCase().replace(/_/g, " ") +
+              ")",
+          );
         }
       });
     }
@@ -239,7 +291,12 @@
       var tats = [];
       Object.keys(p.tattoos).forEach(function (key) {
         var t = p.tattoos[key];
-        if (t) tats.push((t.name || t.type || "tattoo") + " on the " + key.toLowerCase().replace(/_/g, " "));
+        if (t)
+          tats.push(
+            (t.name || t.type || "tattoo") +
+              " on the " +
+              key.toLowerCase().replace(/_/g, " "),
+          );
       });
       if (tats.length) html += "<p>Tattoos: " + tats.join("; ") + ".</p>";
     }
