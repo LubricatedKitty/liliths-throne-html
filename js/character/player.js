@@ -288,6 +288,17 @@
     return ch;
   };
 
+  LT.REGENERATION_RATE = 0.1;
+
+  LT.tickRegeneration = function (ch, seconds) {
+    if (!ch || !(seconds > 0)) return;
+    if (LT.combat && LT.combat.active) return;
+    if (LT.sex && LT.sex.active) return;
+    var amount = (seconds / 60) * LT.REGENERATION_RATE;
+    if (ch.health < ch.maxHealth) ch.health = Math.min(ch.maxHealth, ch.health + amount);
+    if (ch.mana < ch.maxMana) ch.mana = Math.min(ch.maxMana, ch.mana + amount);
+  };
+
   LT.incrementExperience = function (amount) {
     var p = LT.game && LT.game.player;
     if (!p || !amount) return "";
