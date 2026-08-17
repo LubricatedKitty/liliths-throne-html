@@ -38,7 +38,7 @@
       '<div class="stat-icon" data-tip="' +
       label +
       ": " +
-      value +
+      Number(Math.floor(value)) +
       '"><img src="' +
       icon +
       '" alt="' +
@@ -46,7 +46,7 @@
       '"><span style="color:' +
       colour +
       ';">' +
-      value +
+       Number(Math.floor(value)) +
       "</span></div>"
     );
   }
