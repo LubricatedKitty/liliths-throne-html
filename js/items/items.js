@@ -17,6 +17,9 @@
       this.tags = {}
       this.flags = {}
     }
+    genUid(prefix) {
+      this.uid = prefix + "_" + Math.random().toString(36).slice(2, 8);
+    }
     equip() {
       throw new Error("Not Implemented in generic item class")
     } 
@@ -213,13 +216,9 @@
   LT.makeItem = function (id) {
     var t = ITEMS[id];
     if (!t) return null;
-    return {
-      kind: t.kind,
-      id: t.id,
-      name: t.name,
-      value: t.value,
-      uid: uid(t.kind || "item"),
-    };
+    var item = structuredClone(item)
+    item.genUid(t.kind || "item")
+    return item
   };
 
   LT.shopItemIds = function (seller) {

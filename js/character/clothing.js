@@ -1,7 +1,5 @@
 (function () {
-  function C(id, name, slot, colour, colourName, covers) {
-    return { id: id, name: name, slot: slot, colour: colour, colourName: colourName, covers: covers || [slot] };
-  }
+  
   class Clothing extends LT.item {
     constructor(id, name, slot, colour, colourName, covers) {
       opts = {
@@ -108,15 +106,9 @@
   add(new Clothing("watch_black", "women's watch", "wrist", "#222222", "black"));
 
   function copy(item) {
-    return {
-      id: item.id,
-      name: item.name,
-      slot: item.slot,
-      colour: item.colour,
-      colourName: item.colourName,
-      covers: item.covers.slice(),
-      uid: item.id + "_" + Math.random().toString(36).slice(2, 8),
-    };
+    var item = structuredClone(item)
+    item.genUid(item.id)
+    return item
   }
 
   LT.makeClothing = function (id) {
