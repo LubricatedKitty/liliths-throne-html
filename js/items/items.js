@@ -17,6 +17,9 @@
       this.tags = {}
       this.flags = {}
     }
+    equip() {
+      throw new Error("Not Implemented in generic item class")
+    } 
   }
 
   var ITEMS = (LT.ITEMS = {
