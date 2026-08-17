@@ -23,22 +23,22 @@
   }
 
   var ITEMS = (LT.ITEMS = {
-    innoxia_items_essence_arcane: {
+    innoxia_items_essence_arcane: new Item({
       id: "innoxia_items_essence_arcane",
       kind: "essence",
       name: "bottled arcane essence",
       value: 0,
       description: "A small vial containing a swirling pink shard of arcane essence. Drinking it returns the essence to your aura.",
-    },
-    innoxia_bdsm_metal_collar: {
+    }),
+    innoxia_bdsm_metal_collar: new Item({
       id: "innoxia_bdsm_metal_collar",
       kind: "collar",
       name: "metal collar",
       value: 2500,
       soldBy: ["finch"],
       description: "A sturdy metal slave collar. The ring on the front glows when held near a wanted criminal.",
-    },
-    innoxia_race_cat_felines_fancy: {
+    }),
+    innoxia_race_cat_felines_fancy: new Item({
       id: "innoxia_race_cat_felines_fancy",
       kind: "tf",
       name: "Feline's Fancy",
@@ -48,8 +48,8 @@
       fem: "cat-girl",
       masc: "cat-boy",
       description: "A delicate glass bottle filled with a thick, cream-like liquid.",
-    },
-    innoxia_race_dog_canine_crush: {
+    }),
+    innoxia_race_dog_canine_crush: new Item({
       id: "innoxia_race_dog_canine_crush",
       kind: "tf",
       name: "Canine Crush",
@@ -59,8 +59,8 @@
       fem: "dog-girl",
       masc: "dog-boy",
       description: "A beer bottle filled with a dark, fizzy liquid.",
-    },
-    innoxia_race_wolf_wolf_whiskey: {
+    }),
+    innoxia_race_wolf_wolf_whiskey: new Item({
       id: "innoxia_race_wolf_wolf_whiskey",
       kind: "tf",
       name: "Wolf Whiskey",
@@ -70,8 +70,8 @@
       fem: "wolf-girl",
       masc: "wolf-boy",
       description: "A bottle of strong whiskey with a wolf on the label.",
-    },
-    innoxia_race_horse_equine_cider: {
+    }),
+    innoxia_race_horse_equine_cider: new Item({
       id: "innoxia_race_horse_equine_cider",
       kind: "tf",
       name: "Equine Cider",
@@ -81,8 +81,8 @@
       fem: "horse-girl",
       masc: "horse-boy",
       description: "A bottle of sweet cider.",
-    },
-    innoxia_race_fox_vulpines_vineyard: {
+    }),
+    innoxia_race_fox_vulpines_vineyard: new Item({
       id: "innoxia_race_fox_vulpines_vineyard",
       kind: "tf",
       name: "Vulpine's Vineyard",
@@ -92,8 +92,8 @@
       fem: "fox-girl",
       masc: "fox-boy",
       description: "A bottle of rich red wine.",
-    },
-    innoxia_race_harpy_harpy_perfume: {
+    }),
+    innoxia_race_harpy_harpy_perfume: new Item({
       id: "innoxia_race_harpy_harpy_perfume",
       kind: "tf",
       name: "Harpy Perfume",
@@ -103,8 +103,8 @@
       fem: "harpy",
       masc: "harpy",
       description: "A bottle of floral perfume favoured by harpies.",
-    },
-    innoxia_race_harpy_bubblegum_lollipop: {
+    }),
+    innoxia_race_harpy_bubblegum_lollipop: new Item({
       id: "innoxia_race_harpy_bubblegum_lollipop",
       kind: "tf",
       name: "Bubblegum Lollipop",
@@ -114,8 +114,8 @@
       fem: "harpy",
       masc: "harpy",
       description: "A bright pink lollipop, with a little ball of gum at its core. Although it doesn't look out of the ordinary, it's somewhat unusual in the fact that it has an incredibly strong smell of bubblegum.",
-    },
-    innoxia_race_human_vanilla_water: {
+    }),
+    innoxia_race_human_vanilla_water: new Item({
       id: "innoxia_race_human_vanilla_water",
       kind: "tf",
       name: "Vanilla Water",
@@ -125,8 +125,8 @@
       fem: "human",
       masc: "human",
       description: "A bottle of faintly vanilla-scented water.",
-    },
-    innoxia_race_demon_liliths_gift: {
+    }),
+    innoxia_race_demon_liliths_gift: new Item({
       id: "innoxia_race_demon_liliths_gift",
       kind: "tf",
       name: "Lilith's Gift",
@@ -136,69 +136,69 @@
       fem: "succubus",
       masc: "incubus",
       description: "A bottle of glowing purple liquid. The label simply reads 'Lilith's Gift'.",
-    },
-    REJUVENATION_POTION: {
+    }),
+    REJUVENATION_POTION: new Item({
       id: "REJUVENATION_POTION",
       kind: "consumable",
       name: "rejuvenation potion",
       value: 1000,
       soldBy: ["ralph", "vicky"],
       description: "Guaranteed to restore over-used orifices and refill all of your fluids.",
-    },
-    innoxia_toy_dildo: {
+    }),
+    innoxia_toy_dildo: new Item({
       id: "innoxia_toy_dildo",
       kind: "toy",
       name: "dildo",
       value: 250,
       soldBy: ["ashley"],
       description: "A plain but well-made dildo.",
-    },
-    innoxia_toy_vibrator: {
+    }),
+    innoxia_toy_vibrator: new Item({
       id: "innoxia_toy_vibrator",
       kind: "toy",
       name: "vibrator",
       value: 300,
       soldBy: ["ashley"],
       description: "A compact vibrator.",
-    },
-    innoxia_gift_heart_box: {
+    }),
+    innoxia_gift_heart_box: new Item({
       id: "innoxia_gift_heart_box",
       kind: "gift",
       name: "heart-shaped gift box",
       value: 100,
       soldBy: ["ashley"],
       description: "A gift box from Dream Lover.",
-    },
-    innoxia_cosmetic_lipstick: {
+    }),
+    innoxia_cosmetic_lipstick: new Item({
       id: "innoxia_cosmetic_lipstick",
       kind: "cosmetic",
       name: "Lipstick",
       value: 150,
       soldBy: ["kate"],
       description: "A tube of lipstick from Succubi's Secrets.",
-    },
-    ADDICTION_REMOVAL: {
+    }),
+    ADDICTION_REMOVAL: new Item({
       id: "ADDICTION_REMOVAL",
       kind: "consumable",
       name: "Angel's Nectar",
       value: 750,
       soldBy: ["ralph"],
       description: "A delicate crystal bottle filled with a cool, blue liquid.",
-    },
-    FETISH_UNREFINED: {
+    }),
+    FETISH_UNREFINED: new Item({
       id: "FETISH_UNREFINED",
       kind: "consumable",
       name: "unrefined fetish",
       value: 500,
       description: "A cloudy vial of unrefined fetish-infused fluid. Official fetish potions are not fully in this build.",
-    },
-    DYE_BRUSH: {
+    }),
+    DYE_BRUSH: new Item({
       id: "DYE_BRUSH",
       kind: "consumable",
       name: "dye-brush",
       value: 150,
       description: "A small brush used to recolour clothing. Dyes are not in this build.",
-    },
+    }),
   });
 
   LT.itemType = function (id) {
