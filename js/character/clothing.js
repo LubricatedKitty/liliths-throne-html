@@ -4,13 +4,16 @@
       opts = {
         id: id,
         name: name,
-        type: "clothing",
+        kind: "clothing",
       };
       super(opts);
       this.slot = slot;
       this.colour = colour;
       this.colourName = colourName;
       this.covers = covers || [slot];
+    }
+    get uidPrefix() {
+      return this.id;
     }
   }
   class Slot {
@@ -213,13 +216,12 @@
   );
 
   function copy(item) {
-    var item = structuredClone(item);
-    item.genUid(item.id);
     return item;
   }
 
   LT.makeClothing = function (id) {
-    return copy(CAT[id]);
+    var item = CAT[id];
+    return item.copy();
   };
 
   LT.coversArea = function (player, area) {

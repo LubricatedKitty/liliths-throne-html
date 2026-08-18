@@ -18,8 +18,16 @@
       this.tags = {};
       this.flags = {};
     }
-    genUid(prefix) {
-      this.uid = prefix + "_" + Math.random().toString(36).slice(2, 8);
+    genUid() {
+      this.uid = this.UidPrefix + "_" + Math.random().toString(36).slice(2, 8);
+    }
+    get UidPrefix() {
+      return this.kind;
+    }
+    copy() {
+      var copy = structuredClone(this);
+      copy.genUid();
+      return copy;
     }
     equip() {
       throw new Error("Not Implemented");
@@ -225,8 +233,7 @@
   LT.makeItem = function (id) {
     var t = ITEMS[id];
     if (!t) return null;
-    var item = structuredClone(item);
-    item.genUid(t.kind || "item");
+    var item = t.copy();
     return item;
   };
 
