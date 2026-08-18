@@ -11,6 +11,7 @@
       this.name = opts.name;
       this.description = opts.description || "";
       this.kind = opts.kind;
+      this.value = opts.value || 0;
       this.soldBy = opts.soldBy || [];
       this.race = opts.race || bugreportmsg;
       this.fem = opts.fem || bugreportmsg;
