@@ -18,6 +18,7 @@
       this.masc = opts.masc || bugreportmsg;
       this.tags = {};
       this.flags = {};
+      this.dirty = false;
     }
     genUid() {
       this.uid = this.uidPrefix + "_" + Math.random().toString(36).slice(2, 8);
@@ -31,6 +32,15 @@
       return copy;
     }
     equip() {
+      throw new Error("Not Implemented");
+    }
+    onEquip() {
+      throw new Error("Not Implemented");
+    }
+    pickup() {
+      throw new Error("Not Implemented");
+    }
+    onPickup() {
       throw new Error("Not Implemented");
     }
   };
