@@ -33,7 +33,14 @@
       throw new Error("Not Implemented");
     }
   };
-
+  /*
+    to define an item correctly:
+    create a dict with the following values
+    id, kind, name, value, description, soldBy
+    tags and flags are optional and not currently used
+    if you are adding transformative items add race, fem, masc
+    then pipe it into an item class like the first example below
+  */
   var ITEMS = (LT.ITEMS = {
     innoxia_items_essence_arcane: new Item({
       id: "innoxia_items_essence_arcane",
