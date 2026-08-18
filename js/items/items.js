@@ -20,9 +20,9 @@
       this.flags = {};
     }
     genUid() {
-      this.uid = this.UidPrefix + "_" + Math.random().toString(36).slice(2, 8);
+      this.uid = this.uidPrefix + "_" + Math.random().toString(36).slice(2, 8);
     }
-    get UidPrefix() {
+    get uidPrefix() {
       return this.kind;
     }
     copy() {

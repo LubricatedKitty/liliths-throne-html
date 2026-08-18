@@ -1,5 +1,5 @@
 (function () {
-  class Clothing extends LT.item {
+  class Clothing extends LT.Item {
     constructor(id, name, slot, colour, colourName, covers) {
       opts = {
         id: id,
