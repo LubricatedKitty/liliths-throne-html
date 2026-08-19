@@ -241,5 +241,5 @@ if ($pushed -ne 0) {
   throw "git push failed."
 }
 Write-Ok "Pushed $branch to origin"
-if ($gh) { Gh repo view --web }
+if ($gh) { Gh repo view --web | Out-Null }
 Write-Host "`nDone." -ForegroundColor Green
