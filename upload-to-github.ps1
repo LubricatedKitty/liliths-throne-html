@@ -95,26 +95,26 @@ if ($gh) {
   Write-Ok "GitHub CLI: $gh"
 }
 
-function Git {
+function Invoke-Native([string]$exe, [object[]]$cmdArgs) {
   $old = $ErrorActionPreference
   $ErrorActionPreference = "Continue"
+  $code = 0
   try {
-    & $git @args
-    return $LASTEXITCODE
+    # Capture stdout/stderr so they are NOT function output. Callers assign
+    # only the exit code. Mixing git's "[main] ..." line with 0 makes
+    # `if ($code -ne 0)` true in PowerShell (it filters the array).
+    $out = & $exe @cmdArgs 2>&1
+    $code = $LASTEXITCODE
+    foreach ($line in @($out)) {
+      if ($null -ne $line -and "$line" -ne "") { Write-Host "    $line" }
+    }
   } finally {
     $ErrorActionPreference = $old
   }
+  return [int]$code
 }
-function Gh {
-  $old = $ErrorActionPreference
-  $ErrorActionPreference = "Continue"
-  try {
-    & $gh @args
-    return $LASTEXITCODE
-  } finally {
-    $ErrorActionPreference = $old
-  }
-}
+function Git { return (Invoke-Native $git $args) }
+function Gh { return (Invoke-Native $gh $args) }
 function Git-Out {
   $old = $ErrorActionPreference
   $ErrorActionPreference = "Continue"
