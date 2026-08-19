@@ -222,6 +222,18 @@ if (-not $hasOrigin) {
 Write-Step "Pushing to origin"
 $branch = Git-Out rev-parse --abbrev-ref HEAD
 if (-not $branch) { $branch = "main" }
+Git fetch origin | Out-Null
+$remoteExists = Git-Out rev-parse --verify "origin/$branch"
+if ($remoteExists) {
+  $behind = Git-Out rev-list --count "$branch..origin/$branch"
+  if ($behind -and [int]$behind -gt 0) {
+    Write-Warn "GitHub has $behind newer commit(s). Rebasing this folder onto them."
+    $rebased = Git pull --rebase origin $branch
+    if ($rebased -ne 0) {
+      throw "git pull --rebase failed. Keep local files you still want (git add <file>), run git rebase --continue, then run this script again."
+    }
+  }
+}
 $pushed = Git push -u origin $branch
 if ($pushed -ne 0) {
   Write-Warn "Push failed. If GitHub asks you to log in, use a Personal Access Token as the password:"
