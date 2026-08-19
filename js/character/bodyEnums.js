@@ -60,12 +60,28 @@
   LT.HAIR_STYLE = [
     { id: "NONE", name: "none", minLength: 0 },
     { id: "MESSY", name: "messy", minLength: 1 },
+    { id: "LOOSE", name: "loose", minLength: 1 },
+    { id: "SLICKED_BACK", name: "slicked-back", minLength: 1 },
+    { id: "MOHAWK", name: "mohawk", minLength: 1 },
+    { id: "AFRO", name: "afro", minLength: 1 },
+    { id: "SIDECUT", name: "sidecut", minLength: 1 },
+    { id: "PIXIE", name: "pixie-cut", minLength: 1 },
+    { id: "BOB_CUT", name: "bob cut", minLength: 2 },
     { id: "STRAIGHT", name: "straight", minLength: 2 },
     { id: "WAVY", name: "wavy", minLength: 2 },
     { id: "CURLY", name: "curly", minLength: 2 },
     { id: "PONYTAIL", name: "ponytail", minLength: 3 },
+    { id: "LOW_PONYTAIL", name: "low ponytail", minLength: 3 },
     { id: "BUN", name: "bun", minLength: 3 },
+    { id: "CHIGNON", name: "chignon", minLength: 3 },
     { id: "BRAIDED", name: "braided", minLength: 3 },
+    { id: "TWIN_TAILS", name: "twin tails", minLength: 3 },
+    { id: "TWIN_BRAIDS", name: "twin braids", minLength: 3 },
+    { id: "SIDE_BRAIDS", name: "side braids", minLength: 3 },
+    { id: "CROWN_BRAID", name: "crown braid", minLength: 3 },
+    { id: "HIME_CUT", name: "hime cut", minLength: 3 },
+    { id: "TOPKNOT", name: "topknot", minLength: 2 },
+    { id: "DREADLOCKS", name: "dreadlocks", minLength: 2 },
   ];
 
   LT.CUP = {
@@ -79,8 +95,14 @@
     E: item("E", "E-cup"),
     F: item("F", "F-cup"),
     FF: item("FF", "FF-cup"),
+    G: item("G", "G-cup"),
+    GG: item("GG", "GG-cup"),
+    H: item("H", "H-cup"),
   };
-  LT.CUP_LIST = list(LT.CUP.FLAT, LT.CUP.AA, LT.CUP.A, LT.CUP.B, LT.CUP.C, LT.CUP.D, LT.CUP.DD, LT.CUP.E, LT.CUP.F, LT.CUP.FF);
+  LT.CUP_LIST = list(
+    LT.CUP.FLAT, LT.CUP.AA, LT.CUP.A, LT.CUP.B, LT.CUP.C, LT.CUP.D, LT.CUP.DD,
+    LT.CUP.E, LT.CUP.F, LT.CUP.FF, LT.CUP.G, LT.CUP.GG, LT.CUP.H,
+  );
 
   LT.BREAST_SHAPE = [
     item("ROUND", "round"),
@@ -231,6 +253,48 @@
     e("ARACHNID", "arachnid"),
     e("CEPHALOPOD", "cephalopod"),
     e("AVIAN", "avian"),
+  ];
+
+  LT.LACTATION = [
+    e("ZERO_NONE", "none"),
+    e("ONE_TRICKLE", "a trickle"),
+    e("TWO_LITTLE", "a small amount"),
+    e("THREE_DECENT_AMOUNT", "a decent amount"),
+    e("FOUR_LARGE", "a large amount"),
+    e("FIVE_HUGE", "a huge amount"),
+    e("SIX_EXTREME", "an extreme amount"),
+    e("SEVEN_MONSTROUS", "a monstrous amount"),
+  ];
+
+  LT.CUM_PRODUCTION = [
+    e("ZERO_NONE", "none"),
+    e("ONE_TRICKLE", "a trickle"),
+    e("TWO_SMALL_AMOUNT", "a small amount"),
+    e("THREE_AVERAGE", "an average amount"),
+    e("FOUR_LARGE", "a large amount"),
+    e("FIVE_HUGE", "a huge amount"),
+    e("SIX_EXTREME", "an extreme amount"),
+    e("SEVEN_MONSTROUS", "a monstrous amount"),
+  ];
+
+  LT.CAPACITY = [
+    e("ZERO_IMPENETRABLE", "impenetrably tight"),
+    e("ONE_EXTREMELY_TIGHT", "extremely tight"),
+    e("TWO_TIGHT", "tight"),
+    e("THREE_SLIGHTLY_LOOSE", "slightly loose"),
+    e("FOUR_LOOSE", "loose"),
+    e("FIVE_ROOMY", "roomy"),
+    e("SIX_STRETCHED_OPEN", "stretched open"),
+    e("SEVEN_GAPING", "gaping"),
+  ];
+
+  LT.AGE_CATEGORY = [
+    { id: "TEENS_LATE", name: "late teens", min: 18, max: 19, colour: "#ff9de0" },
+    { id: "TWENTIES", name: "twenties", min: 20, max: 29, colour: "#ff6bda" },
+    { id: "THIRTIES", name: "thirties", min: 30, max: 39, colour: "#e36f9b" },
+    { id: "FORTIES", name: "forties", min: 40, max: 49, colour: "#c06fe3" },
+    { id: "FIFTIES", name: "fifties", min: 50, max: 59, colour: "#b98cff" },
+    { id: "SIXTIES_PLUS", name: "sixties or older", min: 60, max: 200, colour: "#888888" },
   ];
 
   LT.WETNESS = [

@@ -67,6 +67,20 @@
         ];
       }
       if (!c.active) return [null];
+      var queued = (c.player && c.player.selectedMoves && c.player.selectedMoves.length) || 0;
+      var reset = new LT.Response(
+        "Reset",
+        queued
+          ? "Resets your selected moves, allowing you to choose different ones for this turn of combat."
+          : "You cannot reset your selected moves as you haven't selected any yet!",
+        queued ? "combat.fight" : null,
+        queued
+          ? function () {
+              c.resetSelectedMoves();
+            }
+          : null,
+      );
+      if (!queued) reset.disable("You cannot reset your selected moves as you haven't selected any yet!");
       var end = new LT.Response(
         "End Turn",
         c.remainingAp() <= 0 ? "Ends your current turn." : "Ends your current turn. You still have unspent AP!",
@@ -117,7 +131,7 @@
         });
       }
       if (tabIndex === 3) {
-        var teaseSlots = [slot(0, end)];
+        var teaseSlots = [slot(0, end), slot(14, reset)];
         var teases = typeof LT.availableTeases === "function" ? LT.availableTeases(c.player) : ["tease"];
         for (var te = 0; te < teases.length; te++) {
           (function (moveId, index) {
@@ -135,7 +149,7 @@
         return teaseSlots;
       }
       if (tabIndex === 2) {
-        var specialSlots = [slot(0, end)];
+        var specialSlots = [slot(0, end), slot(14, reset)];
         var specials = typeof LT.availableSpecials === "function" ? LT.availableSpecials(c.player) : [];
         for (var p = 0; p < specials.length; p++) {
           (function (moveId, index) {
@@ -154,7 +168,7 @@
         return specialSlots;
       }
       if (tabIndex === 1 && LT.SPELL_IDS) {
-        var spellSlots = [slot(0, end)];
+        var spellSlots = [slot(0, end), slot(14, reset)];
         var known = LT.knownSpells ? LT.knownSpells(c.player) : LT.SPELL_IDS;
         for (var s = 0; s < known.length; s++) {
           (function (spellId, index) {
@@ -183,7 +197,7 @@
         }
         return spellSlots;
       }
-      return [slot(0, end), slot(1, strike), slot(2, block), slot(3, tease), slot(4, resist), slot(6, offhand), slot(7, allout), slot(9, submit), slot(10, escape)];
+      return [slot(0, end), slot(1, strike), slot(2, block), slot(3, tease), slot(4, resist), slot(6, offhand), slot(7, allout), slot(9, submit), slot(10, escape), slot(14, reset)];
     },
   });
 
@@ -199,11 +213,11 @@
     },
     getResponses: function () {
       return [
-        new LT.Response("Back", "Return to the fight.", "combat.fight"),
-        new LT.Response("Confirm", "Surrender this fight.", null, function () {
+        slot(0, new LT.Response("Cancel", "Carry on fighting.", "combat.fight")),
+        slot(1, new LT.Response("Submit", "Surrender this fight to your opponent.", null, function () {
           LT.combat.finished = "defeat";
           LT.combat.finish();
-        }).withColour(LT.Colour.GENERIC_BAD),
+        }).withColour(LT.Colour.GENERIC_BAD)),
       ];
     },
   });

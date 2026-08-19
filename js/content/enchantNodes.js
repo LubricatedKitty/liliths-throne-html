@@ -169,6 +169,7 @@
         var racial = typeof LT.isRacialIngredient === "function" && LT.isRacialIngredient(item);
         var weapon = typeof LT.isWeaponIngredient === "function" && LT.isWeaponIngredient(item);
         var cap = racial ? LT.ENCHANT_MAX_POTION_EFFECTS : weapon ? LT.ENCHANT_MAX_WEAPON_EFFECTS : LT.ENCHANT_MAX_EFFECTS;
+        if (typeof LT.hasProperty === "function" && !LT.hasProperty("enchantmentLimits")) cap = 99;
         if (s.effects.length >= cap) {
           LT.game.textStart = "<p>This item cannot hold any more effects.</p>";
           return;

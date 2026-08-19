@@ -6,7 +6,10 @@
     } },
     { id: "journal", icon: "journal.svg", tip: "Phone / Journal", action: function () { LT.openPhone(); } },
     { id: "inventory", icon: "inventory.svg", tip: "Inventory", action: function () { LT.openInventory(); } },
-    { id: "characters", icon: "people.svg", tip: "Characters present", action: function () { LT.openUI("characters-present"); } },
+    { id: "characters", icon: "people.svg", tip: "Characters present", action: function () {
+      if (typeof LT.openCharactersPresent === "function") LT.openCharactersPresent();
+      else LT.openUI("characters-present");
+    } },
     { id: "copy", icon: "copy.svg", tip: "Copy dialogue", action: copyDialogue },
   ];
 

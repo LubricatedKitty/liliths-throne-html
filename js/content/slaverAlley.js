@@ -39,10 +39,16 @@
     secondsPassed: 0,
     chrome: { left: true, right: true },
     getContent: function () {
-      return alleyXml("GATEWAY");
+      var html = alleyXml("GATEWAY");
+      if (LT.game.flags && LT.game.flags.helenaRomance === "ROMANCE_HELENA_6_ADVERTISING") html += alleyXml("GATEWAY_POSTERS");
+      return html;
     },
     getResponses: function () {
-      return LT.travelResponses ? LT.travelResponses() : [null];
+      var list = LT.travelResponses ? LT.travelResponses() : [null];
+      if (LT.game.flags && LT.game.flags.helenaRomance === "ROMANCE_HELENA_6_ADVERTISING") {
+        list.push(new LT.Response("Posters", "Ask the guards for permission to put up the posters which Helena gave to you.", "alley.posters"));
+      }
+      return list;
     },
   });
 
@@ -115,6 +121,7 @@
       if (typeof LT.ensureHelena === "function") LT.ensureHelena();
     },
     getContent: function () {
+      if (typeof LT.helenaShopExteriorHtml === "function") return LT.helenaShopExteriorHtml();
       var q = LT.game.flags && LT.game.flags.quest;
       if (q === "MAIN_1_F_SCARLETTS_FATE" || (LT.questReached && LT.questReached("MAIN_1_G_SLAVERY"))) {
         return shopXml("HELENAS_SHOP_EXTERIOR_HELENA_RETURNS");
@@ -124,6 +131,11 @@
     },
     getResponses: function () {
       var list = LT.travelResponses ? LT.travelResponses() : [null];
+      if (typeof LT.helenaShopEnterResponse === "function") {
+        var enter = LT.helenaShopEnterResponse();
+        if (enter) list.push(enter);
+        return list;
+      }
       var q = LT.game.flags && LT.game.flags.quest;
       if (q === "MAIN_1_F_SCARLETTS_FATE" || (LT.questReached && LT.questReached("MAIN_1_G_SLAVERY"))) {
         list.push(new LT.Response("Enter", "Enter the shop.", "helena.shop"));
@@ -218,12 +230,15 @@
       var h = LT.game.npcs.helena;
       var s = LT.game.npcs.scarlett;
       if (h) h.location = { world: "SLAVER_ALLEY", place: "SLAVER_ALLEY_SCARLETTS_SHOP" };
-      if (s) s.location = { world: "SLAVER_ALLEY", place: "SLAVER_ALLEY_SCARLETTS_SHOP" };
+      var q = LT.game.flags && LT.game.flags.quest;
+      if (s && (q === "MAIN_1_F_SCARLETTS_FATE" || q === "MAIN_1_G_SLAVERY")) {
+        s.location = { world: "SLAVER_ALLEY", place: "SLAVER_ALLEY_SCARLETTS_SHOP" };
+      }
     },
     getContent: function () {
       if (LT.game.flags && LT.game.flags.quest === "MAIN_1_F_SCARLETTS_FATE") return shopXml("HELENAS_SHOP_INTRODUCTION");
       if (LT.game.flags && LT.game.flags.quest === "MAIN_1_G_SLAVERY") return shopXml("HELENAS_SHOP_OFFER_SCARLETT");
-      return shopXml("HELENAS_SHOP_INTRODUCTION");
+      return shopXml("HELENAS_SHOP");
     },
     getResponses: function () {
       var q = LT.game.flags && LT.game.flags.quest;
@@ -239,6 +254,13 @@
       }
       var list = [new LT.Response("Leave", "Say goodbye to Helena and exit her shop.", "place.SLAVER_ALLEY_SCARLETTS_SHOP")];
       if (q === "MAIN_1_G_SLAVERY") list.push(scarlettBuyResponse());
+      if (LT.questReached && LT.questReached("MAIN_1_H_THE_GREAT_ESCAPE") && !(LT.game.flags && LT.game.flags.helenaRomance)) {
+        list.push(
+          new LT.Response("Business", "Ask Helena why she's chosen to remain here and run this business herself.<br/>This will start Helena's romance quest!", "helena.business").withColour(
+            LT.Colour.GENERIC_ARCANE,
+          ),
+        );
+      }
       return list;
     },
   });

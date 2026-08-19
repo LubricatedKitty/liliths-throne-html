@@ -14,6 +14,18 @@ Story policy through **1-G**: official text, thin runtime, converters for XML/ma
 
 Everything built after the 0.37.1 public zip, shipped as one version.
 
+**Appearance**
+
+- Selfie, Contacts, Characters Present inspect, and the museum creator hub all use an official-shaped character information screen and `Body.getDescription` sections (Overview, Face, Mouth, Torso, Chest, Arms, Legs, Wings, Tail, Ass, Penis/Vagina, Tattoos).
+- Unique NPCs ship their official 0.4.10 height, femininity, hair, breasts, and racial parts. Covered genitals stay hidden. Ashley's cloak still conceals their body.
+- Character creation adds official lactation and cum production, and the official hair-style list. Creator edits now write through to the body used by the appearance screen.
+
+**Independence and Characters Present**
+
+- Play no longer embeds `Liliths Throne v0.4.10` paths. Map icons already live in `assets/map/`; `convert_maps.py` still reads 0.4.10 at rebuild time and copies icons, but it no longer writes those source paths into `allGrids.js`.
+- Unique NPCs ship clothed portraits in `assets/characters/`. Official folders were copied; Felicia, Ashley, Jules, Hannah, and Finch (no official art folder) have generated clothed defaults. Custom http(s) URLs still override.
+- Characters Present matches the official right panel: clickable names, camera if artwork exists, thumbnails when that option is on, then Items Present and Event Log. Clicking a name or the people button opens the inspect screen with the portrait.
+
 **World, time, museum**
 
 - World map tiles use official place colours and landmark icons instead of a grey grid.
@@ -53,6 +65,73 @@ Everything built after the 0.37.1 public zip, shipped as one version.
 - Pay, placement, and workplace sex use the job at the current hour. Lab jobs refuse 22:00–05:00. Caps are per hour.
 - Daily stamina starts at **24**. Overwork 1/2/3 at `-1…-9` / `-10…-19` / `-20+` apply official extra affection loss.
 - Permissions are official Behaviour / General / Sex groups (House Freedom, Use You, Sex Toy, breeding flags, and so on).
+- Job settings match official per-job toggles (bedroom greeting/sleep, milking collection, stocks/prostitute acts, spa bathing, security door).
+- Empty rooms also convert to official **double** (3500) / **quad** (6000) slave rooms and a **slave lounge** (5000). Singles upgrade in place. Idle slaves with House Freedom may wander into a lounge. Garden/library **Descend** into Lilaya's dungeon; cells house one slave. Spa occupancy builds the official sauna and pool extensions.
+- Slaves with Initiate Sex + Sex Toy who share a workplace or lounge generate official-style slave-on-slave / bonding events.
+- Remaining official permission groups: Pills, Pregnancy, Diet, Exercise, Cleanliness, Sleeping.
+- Slave-room furnishings: double/steel bed, dog bowls / room service, obedience trainer, arcane instruments. Dungeon cells house four and take straw/improved bedding, decent food / dog bowls, ropes / chains.
+- Dining hall (6000) and waitress/waiter job (50/hour). Milking tanks store or auto-sell at official 0.01 / 0.1 / 1.0 flames per ml; artisan/industrial machines and Lact-o-Cups / Succ-u-Buses / Vibro-Pumps are room extras.
+
+**Content options**
+
+- Main menu **Options** is the official four-page content filter set (Misc. / Gameplay / Sex & Fetishes / Bodies) plus Reset to defaults.
+- Flags persist in `localStorage` separately from saves. Parse (`game.isNonConEnabled()` and the rest) and sex actions honour anal / foot / nipple-pen. Enchantment Capacity and pregnancy duration are live.
+
+**Gender / Orientation / Age / Furry / Fetish preferences**
+
+- Options slots 6–10 are the official preference pages. Slot 11 on those pages is Defaults. Slot 5 Reset still leaves these maps alone.
+- Defaults match 0.4.10: male/female Average (10), futanari/trap Minimal (1), other genders Off; all three orientations Average; official age-category weights; bimbo/cross-dressing Dislike, other listed fetishes Neutral; human/taur/half-demon spawn 5%; morph furry Greater; harpy furry/spawn sliders locked.
+- Street muggers, storm attackers, and harpy walkway attackers use `Gender.getGenderFromUserPreferences`, subspecies spawn weights, racial orientation weights, age categories, and fetish preference rolls. Dark alleys stay demons. Harpy attackers stay harpies. Disabled (HUMAN) furry prefs skip that subspecies.
+
+**Public stocks, Ralph's desk, Pix's shower**
+
+- Slaver Alley **Public Stocks** uses official courtyard / Sean XML. Talk, complain, persist, and take their place (locked-up randoms). Owned slaves on the stocks job can be used from the tile.
+- Ralph's Snacks **Discount** is the official under-the-desk oral deal. Quiet keeps **25%** for three days; a heard moan is **−5%**. Shop prices honour `ralphDiscount` until the timer expires.
+- Pix's Playground: official tour, **8000** lifetime membership (or **100**/session), showers, Pix workout, then the official shower-pounce cooldown.
+
+**Helena custom slaves**
+
+- After *Her Highness's Helper*, boutique **Custom slave** uses official `helenasBoutique` XML. Female / male human templates, then personality (name, surname, address, age, orientation, traits, obedience, affection, fetishes) and body (race, height, femininity, eyes, hair, head, ass, breasts, vagina, penis, makeup, piercings).
+- Finish quotes official **25000** plus **1000** per non-human part (cap **5000** per race). **Slime special** adds **5000**. Order stamps a 7-day wait (`helenaSlaveOrderDay`). **Collect slave** transfers them via `takeOwnership` to Slavery Administration.
+
+**Helena Friday dates**
+
+- After *Her Highness's Helper*, shop **Date** is Friday after 17:00. Walk/fly to The Golden Feather (hotel tile appears west of the Harpy Nests entrance). Restaurant drinks and conversation topics use official XML. Sex-life talk at 70 affection unlocks Inside. First kiss unlocks Bedroom sex. Sleep over / breakfast. Nest ↔ hotel elevators after the first date.
+- Dream Lover sells official Rose Bouquet (500), Chocolates (300), Rose Perfume (300), and Teddy Bear (600). Dinner **Gift** uses official Helena reactions (once a day). Bedroom **Virginity** talk unlocks Scarlett **Romantic setup** (three bouquets). Liked Scarlett agrees; otherwise pay 1000 or oral. Romance path: cunnilingus, then leave / shower / take virginity.
+
+**Her Highness's Helper**
+
+- After buying Scarlett, Helena's shop **Business** starts the official relationship quest. Offer help (pay 10000 / what you have / cannot / refuse), fetch supplies, then buy Purple-star (1500) or Bronze-star (250) paint at Argus's DIY Depot.
+- Decorator 1–3: strip paint, paint the frontage (Natalya delivery: Wait / Offer help / Follow / Submit), then paint *Helena's Boutique*. Scarlett's Return: nest **Helena** if you freed her, or Sell / Give / Refuse if you kept her.
+- Harpy Helper potions, gateway posters (100 flames), overnight prep with Scarlett, drinks, and the official kiss complete the quest and unlock nest Talk / Servant / Relax.
+
+**Helena's nest**
+
+- After 1-E, **Fly after her** is live if you can fly (harpy race or extra wings) and lands at Scarlett's Shop. Storms use official nest shelter text.
+- Freeing Scarlett returns her to the nest. Daytime **Scarlett** plays official meeting text: Leave, or Offer ass / pussy / oral. Servant, Relax, Helena Talk, and Apartment are wired behind *Her Highness's Helper*.
+
+**Angry Harpies**
+
+- Enforcer post **Angry Harpies → Follow** starts official *Nests in chaos*. Brittany, Diana, and Lexi use official nest XML. Talk / Call her ugly / Force compliance, then companion fight → matriarch fight.
+- Each nest advances the side quest. **Report back** after all three pays **5000** flames and completes *Angry Harpies*, which calms walkway attacks (storms still roll).
+- Official no-fight routes: **Bimbo queen**, **Usurp throne**, **Nympho Queen**. Pacifying a nest gives Brittany's lollipop, Diana's perfume, or Lexi's lollipop (legendary unique TFs). Repeat visits offer official Sex, threesomes, Diana **Get dominated**, and Lexi **Spitroast**. Loss uses official Refuse / suck-or-spray / thrown out, plus the three official bad ends when that option is on.
+
+**Zaranix house / 1-H–1-I**
+
+- First visit to Zaranix's home can enter the house. Daytime **Climb fence** / **Fly over fence** lands in the garden. **Kick down door** requires official **35 physique** and, after Amber, continues into the entrance hall.
+- Persistence (**Enter** after four knocks) and the **Beg** lounge meeting (Good doggy, or reluctant/eager shoe-licks when foot content is on) use official ground-floor XML. Meeting Arthur advances *The Great Escape* to *Conclusion* (`MAIN_1_I`).
+- Interior roam: Katherine (ground-floor maid tile), Kelly (first floor), stairs, and Zaranix's lab. **Explain everything** or winning the lab fight sends Arthur to Lilaya's lab.
+- Lab **Agree** plays official `LAB_ARTHURS_TALE`. **Clear storeroom** installs unique **Arthur's Room** (official installation XML). **Find Lyssieth** advances to *Into Submission* (`MAIN_2_A`). Submission travel is not in this build.
+
+**Nightlife district**
+
+- Dominion **Nightlife** street uses official day/night/storm text. **The Watering Hole** is open **19:00–05:00**. Jules: wait 30 minutes, suck cock, or demon skip. Interior roam: main floor, bar, seating, dance floor, VIP, toilets.
+- Clubber search (sub or as sub) uses official 24 genders, race-stage tabs, and a club race list. Talk +5 / Flirt +10 / Kiss ±15 / grope ±20–25. Official kiss/grope/sex gates (affection medians or alcohol). Save/contacts and lose-company. Import is not in this build.
+- Searching **as a sub** starts the official dominant-clubber lead loop. They take you around (bar / dance / seating / toilets), buy drinks by personality (kind Feline's Fancy or Canine Crush, default Wolf Whiskey, selfish Black Rat's Rum), and you accept or refuse. Kind partners invite you home; selfish ones pull you into a stall. Nightly affection, drink cutoff, and two-turns-before-moving match 0.4.10.
+- Kalahari sells official drinks at **1.2×** value (water 12, beer 42, Feline's Fancy 180, Wolf Whiskey 144, Black Rat's Rum 240) with official alcohol (0 / 5% / 10% / 40% / 50%). Talk/flirt/break → Kruger VIP. Closing: save, invite home, or lose company. Partner leave / wasted / closing-time end conditions.
+- Toilets: use/wash/posters, stall sex, glory holes. Seating footsie and stall/home sex hook the live sex scene.
+- **Lights Out** is listed only after `innoxia_hannah_training_complete` (Hannah is not a quest in this build) and is open **18:00–04:00**. Sit-down shots are official vodka 100 / rum 120 / whiskey 120 / arrack 180 / grog 180. Hannah is at the bar **21:00–00:00** with a free first drink and official talk → flirt → kiss before sex.
+- Saved clubbers cannot be met again for **12 hours**, and refuse if they are no longer attracted. Glory-hole patrons use official wasted / drunk / tipsy / horny names.
 
 ---
 

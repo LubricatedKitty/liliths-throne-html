@@ -212,13 +212,52 @@
       renderMap: !!LT.game.renderMap,
       renderAttributes: !!LT.game.renderAttributes,
       discoveredWorlds: LT.game.discoveredWorlds || [],
+      discoveredTiles: LT.game.discoveredTiles || {},
       world: loc.world || (window.grid && grid.gridName) || null,
       place: loc.place || (tile && tile.location && tile.location.placeType) || null,
       x: loc.x != null ? loc.x : window.grid && grid.playerPosition ? grid.playerPosition.x : null,
       y: loc.y != null ? loc.y : window.grid && grid.playerPosition ? grid.playerPosition.y : null,
       player: serializePlayer(LT.game.player),
+      alleyNpcs: serializeAlleyNpcs(),
     };
   };
+
+  function serializeAlleyNpcs() {
+    var out = [];
+    var npcs = LT.game && LT.game.npcs;
+    if (!npcs) return out;
+    Object.keys(npcs).forEach(function (key) {
+      var n = npcs[key];
+      if (!n || n.transient || n.stormAttacker) return;
+      if (!(n.id && String(n.id).indexOf("alley_") === 0) && n.occupation !== "mugger" && n.occupation !== "prostitute") return;
+      if (key === "npc" || key === "alleyMugger") return;
+      out.push({
+        id: n.id,
+        name: n.name,
+        surname: n.surname,
+        playerKnowsName: !!n.playerKnowsName,
+        occupation: n.occupation,
+        feminine: !!n.feminine,
+        gender: n.gender && n.gender.id,
+        raceName: n.raceName,
+        fullRace: n.fullRace,
+        speechColour: n.speechColour,
+        level: n.level,
+        physique: n.physique,
+        arcane: n.arcane,
+        money: n.money,
+        attractedToPlayer: !!n.attractedToPlayer,
+        playerSurrenderCount: n.playerSurrenderCount || 0,
+        encounteredBefore: !!n.encounteredBefore,
+        callsPlayer: n.callsPlayer || "",
+        playerCallsNpc: n.playerCallsNpc || "",
+        location: n.location,
+        fetishes: n.fetishes || [],
+        age: n.age,
+      });
+    });
+    return out;
+  }
 
   LT.listSaves = function () {
     var names = readIndex();
@@ -317,6 +356,22 @@
     reader.readAsText(file);
   };
 
+  function restoreAlleyNpcs(list) {
+    if (!list || !list.length) return;
+    LT.game.npcs = LT.game.npcs || {};
+    var i;
+    for (i = 0; i < list.length; i++) {
+      var rec = list[i];
+      if (!rec || !rec.id) continue;
+      var npc = rec;
+      if (rec.gender && typeof rec.gender === "string" && LT.Gender && LT.Gender[rec.gender]) {
+        npc.gender = LT.Gender[rec.gender];
+      }
+      if (typeof LT.hydrateAlleyNpc === "function") npc = LT.hydrateAlleyNpc(npc);
+      LT.game.npcs[npc.id] = npc;
+    }
+  }
+
   LT.loadGame = function (name) {
     var data = typeof name === "string" ? LT.readSave(name) : name;
     if (!data || !data.player) return false;
@@ -330,6 +385,14 @@
       LT.game.flags = data.flags || {};
       if (typeof LT.ensureWeather === "function") LT.ensureWeather();
       LT.game.discoveredWorlds = data.discoveredWorlds || [];
+      if (data.discoveredTiles) {
+        LT.game.discoveredTiles = data.discoveredTiles;
+      } else {
+        LT.game.discoveredTiles = {};
+        (LT.game.discoveredWorlds || []).forEach(function (world) {
+          if (typeof LT.revealWorld === "function") LT.revealWorld(world);
+        });
+      }
       LT.game.renderMap = !!data.renderMap;
       LT.game.renderAttributes = !!data.renderAttributes;
       LT.game.player = LT.createNewPlayer();
@@ -344,6 +407,7 @@
       }
       if (typeof LT.refreshAllRoomVisuals === "function") LT.refreshAllRoomVisuals();
       if (typeof LT.syncSlaveNpcs === "function") LT.syncSlaveNpcs();
+      restoreAlleyNpcs(data.alleyNpcs);
       if (nodeId && LT.hasNode(nodeId)) LT.game.setContent(nodeId);
       else if (data.world && typeof getCurrentTile === "function") {
         var tile = getCurrentTile();

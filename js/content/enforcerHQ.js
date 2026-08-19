@@ -413,6 +413,7 @@
           "Although you've defeated him, your submissive nature is causing you to consider letting Brax dominantly fuck you...",
           {
             partner: LT.game.npcs.brax,
+            manager: "brax_doggy",
             playerDom: false,
             consensual: true,
             positionName: "All fours",
@@ -484,6 +485,7 @@
         null,
         LT.ResponseSex("Dominated", "Brax is far too strong for you to resist...", {
           partner: LT.game.npcs && LT.game.npcs.brax,
+          manager: "brax_doggy",
           playerDom: false,
           consensual: false,
           positionName: "All fours",

@@ -8,6 +8,9 @@
     "MAIN_1_F_SCARLETTS_FATE",
     "MAIN_1_G_SLAVERY",
     "MAIN_1_H_THE_GREAT_ESCAPE",
+    "MAIN_1_I_ARTHURS_TALE",
+    "MAIN_1_J_ARTHURS_ROOM",
+    "MAIN_2_A_INTO_THE_DEPTHS",
   ];
 
   var QUEST_NAMES = {
@@ -19,6 +22,9 @@
     MAIN_1_F_SCARLETTS_FATE: "The search for Arthur; Scarlett's fate",
     MAIN_1_G_SLAVERY: "The search for Arthur; Slavery",
     MAIN_1_H_THE_GREAT_ESCAPE: "The search for Arthur; The Great Escape",
+    MAIN_1_I_ARTHURS_TALE: "The search for Arthur; Conclusion",
+    MAIN_1_J_ARTHURS_ROOM: "The search for Arthur; A room of his own",
+    MAIN_2_A_INTO_THE_DEPTHS: "Into Submission",
   };
 
   var QUEST_XP = {
@@ -31,6 +37,9 @@
     MAIN_1_F_SCARLETTS_FATE: 30,
     MAIN_1_G_SLAVERY: 30,
     MAIN_1_H_THE_GREAT_ESCAPE: 200,
+    MAIN_1_I_ARTHURS_TALE: 30,
+    MAIN_1_J_ARTHURS_ROOM: 30,
+    MAIN_2_A_INTO_THE_DEPTHS: 10,
   };
 
   function xml(tag) {

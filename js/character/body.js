@@ -19,6 +19,7 @@
       depth: idOf(opts.depth, "TWO_AVERAGE"),
       elasticity: idOf(opts.elasticity, "THREE_FLEXIBLE"),
       plasticity: idOf(opts.plasticity, "THREE_RESILIENT"),
+      stretchedCapacity: opts.stretchedCapacity != null ? opts.stretchedCapacity : null,
       modifiers: opts.modifiers ? opts.modifiers.slice() : [],
       stuffed: !!opts.stuffed,
       virgin: opts.virgin !== false,
@@ -186,6 +187,41 @@
         EYE_IRISES: covering("HUMAN", idOf(opts.eye, "BROWN")),
       },
     };
+  };
+
+  LT.syncBodyFromCharacter = function (ch) {
+    if (!ch) return ch;
+    if (!ch.body && typeof LT.ensureBody === "function") LT.ensureBody(ch);
+    var b = ch.body;
+    if (!b) return ch;
+    if (ch.heightCm != null) b.height = ch.heightCm;
+    if (ch.femininityValue != null) b.femininity = ch.femininityValue;
+    if (ch.bodySize && ch.bodySize.id) b.bodySize = ch.bodySize.id;
+    if (ch.muscle && ch.muscle.id) b.muscle = ch.muscle.id;
+    if (ch.skin && b.torso && b.torso.covering) {
+      b.torso.covering.primary = ch.skin.id || ch.skin;
+      if (b.coverings && b.coverings.HUMAN) b.coverings.HUMAN.primary = b.torso.covering.primary;
+    }
+    if (ch.lipSize && ch.lipSize.id && b.face) b.face.lipSize = ch.lipSize.id;
+    if (b.face) b.face.lipsPuffy = !!ch.lipsPuffy;
+    if (ch.eye && b.eye) b.eye.iris = ch.eye.id || ch.eye;
+    if (ch.hairLength && ch.hairLength.id && b.hair) b.hair.length = ch.hairLength.id;
+    if (ch.hairStyle && ch.hairStyle.id && b.hair) b.hair.style = ch.hairStyle.id;
+    if (ch.hair && b.hair) b.hair.colour = ch.hair.id || ch.hair;
+    if (ch.breastSize && ch.breastSize.id && b.breast) b.breast.size = ch.breastSize.id;
+    if (ch.breastShape && ch.breastShape.id && b.breast) b.breast.shape = ch.breastShape.id;
+    if (ch.nippleSize && ch.nippleSize.id && b.breast && b.breast.nipple) b.breast.nipple.size = ch.nippleSize.id;
+    if (ch.areolaeSize && ch.areolaeSize.id && b.breast && b.breast.areolae) b.breast.areolae.size = ch.areolaeSize.id;
+    if (b.breast && b.breast.nipple) b.breast.nipple.puffy = !!ch.nipplesPuffy;
+    if (ch.assSize && ch.assSize.id && b.ass) b.ass.size = ch.assSize.id;
+    if (ch.hipSize && ch.hipSize.id && b.ass) b.ass.hipSize = ch.hipSize.id;
+    if (b.ass) b.ass.bleached = !!ch.anusBleached;
+    if (ch.penisLength != null && b.penis) b.penis.length = ch.penisLength;
+    if (ch.testicleSize && ch.testicleSize.id && b.penis && b.penis.testicle) b.penis.testicle.size = ch.testicleSize.id;
+    if (ch.vaginaCapacity && b.vagina && b.vagina.orifice) b.vagina.orifice.capacity = ch.vaginaCapacity.id || ch.vaginaCapacity;
+    if (ch.labiaSize && ch.labiaSize.id && b.vagina) b.vagina.labiaSize = ch.labiaSize.id;
+    if (ch.clitorisSize && ch.clitorisSize.id && b.vagina) b.vagina.clitSize = ch.clitorisSize.id;
+    return ch;
   };
 
   LT.syncCharacterFromBody = function (ch) {

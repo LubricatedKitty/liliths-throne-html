@@ -112,7 +112,19 @@
           LT.openSaveLoad();
         }),
         new LT.Response("Options", "Open the options menu.", "boot.options"),
-        new LT.Response("Mod menu", "Open the work-in-progress mod configuration menu.", "boot.mod-menu"),
+        new LT.Response("Mod Menu", "Configure installed mods.", null, function () {
+          if (typeof LT.openModMenu === "function") LT.openModMenu("boot.menu");
+          else LT.game.setContent("boot.mod-menu");
+        }),
+        new LT.Response("Mod List", "See which KittyLoader mods are enabled, in apply order.", null, function () {
+          if (typeof LT.refreshAppliedMods === "function") {
+            LT.refreshAppliedMods(function () {
+              LT.game.setContent("boot.mods");
+            });
+          } else {
+            LT.game.setContent("boot.mods");
+          }
+        }),
         new LT.Response("Disclaimer", "View the game's disclaimer.", "boot.disclaimer"),
       );
       return list;
@@ -136,20 +148,190 @@
     },
   });
 
+  LT.modsFromLoaderState = function (data) {
+    var empty = [];
+    if (!data || !data.profiles || !data.profiles.length) return empty;
+    var wanted = data.active_profile;
+    var profile = data.profiles[0];
+    var i;
+    for (i = 0; i < data.profiles.length; i++) {
+      if (data.profiles[i] && data.profiles[i].name === wanted) {
+        profile = data.profiles[i];
+        break;
+      }
+    }
+    if (!profile) return empty;
+    var enabled = profile.enabled || [];
+    var order = profile.order || [];
+    var on = {};
+    for (i = 0; i < enabled.length; i++) on[enabled[i]] = true;
+    var list = [];
+    var seen = {};
+    function add(file) {
+      if (!file || !on[file] || seen[file]) return;
+      seen[file] = true;
+      list.push({
+        file: file,
+        name: String(file).replace(/\.mod$/i, ""),
+        author: "",
+        version: "",
+        rel: file,
+      });
+    }
+    for (i = 0; i < order.length; i++) add(order[i]);
+    for (i = 0; i < enabled.length; i++) add(enabled[i]);
+    return list;
+  };
+
+  LT.refreshAppliedMods = function (done) {
+    function finish() {
+      if (typeof done === "function") done();
+    }
+    function useJson(data) {
+      LT.APPLIED_MODS = LT.modsFromLoaderState(data);
+      LT.APPLIED_MODS_SOURCE = "kittyloader.json";
+      finish();
+    }
+    function useJs() {
+      var script = document.createElement("script");
+      script.src = "mods/appliedMods.js";
+      script.onload = function () {
+        if (!Array.isArray(LT.APPLIED_MODS)) LT.APPLIED_MODS = [];
+        LT.APPLIED_MODS_SOURCE = "appliedMods.js";
+        finish();
+      };
+      script.onerror = function () {
+        if (!Array.isArray(LT.APPLIED_MODS)) LT.APPLIED_MODS = [];
+        finish();
+      };
+      document.head.appendChild(script);
+    }
+    try {
+      if (typeof fetch !== "function") {
+        useJs();
+        return;
+      }
+      fetch("mods/kittyloader.json", { cache: "no-store" })
+        .then(function (res) {
+          if (!res.ok) throw new Error("no kittyloader.json");
+          return res.json();
+        })
+        .then(useJson)
+        .catch(useJs);
+    } catch (e) {
+      useJs();
+    }
+  };
+
   LT.defineNode({
-    id: "boot.mod-menu",
+    id: "boot.mods",
     ui: "options",
-    title: "Mod menu",
+    title: "Mod List",
     chrome: { left: false, right: false },
     getContent: function () {
-      return (
-        "<p><b>Work in progress.</b> This rebuild does not load gameplay mods yet.</p>" +
-        "<p>The official Java game has a mod folder under <code>res/mods</code>. When this menu is finished, installed mods will be listed here so you can enable or disable them without editing files by hand.</p>" +
-        "<p>For now, nothing here changes the game.</p>"
-      );
+      var mods = Array.isArray(LT.APPLIED_MODS) ? LT.APPLIED_MODS : [];
+      var source = LT.APPLIED_MODS_SOURCE;
+      var html =
+        "<p>Mods enabled in KittyLoader, in apply order. Enable or disable them in KittyLoader, then Apply and reload.</p>";
+      if (source === "kittyloader.json") {
+        html += "<p class='muted'>Read from mods/kittyloader.json.</p>";
+      } else if (source === "appliedMods.js") {
+        html += "<p class='muted'>Could not read kittyloader.json (common when opening index.html as a file). Showing mods/appliedMods.js instead.</p>";
+      }
+      if (!mods.length) {
+        return html + "<p>No mods are enabled.</p>";
+      }
+      html += "<ol>";
+      var i;
+      for (i = 0; i < mods.length; i++) {
+        var m = mods[i] || {};
+        var title = m.name || m.file || "Unnamed mod";
+        var bits = [];
+        if (m.file && m.file !== title) bits.push(m.file);
+        if (m.rel && m.rel !== m.file) bits.push(m.rel);
+        if (m.author && m.author !== "Unknown") bits.push(m.author);
+        if (m.version && m.version !== "—") bits.push(m.version);
+        if (m.depends && m.depends.length) bits.push("needs " + m.depends.join(", "));
+        html +=
+          "<li><b>" +
+          title +
+          "</b>" +
+          (bits.length ? "<br><span class='muted'>" + bits.join(" · ") + "</span>" : "") +
+          "</li>";
+      }
+      html += "</ol>";
+      return html;
     },
     getResponses: function () {
       return [new LT.Response("Back", "Return to the main menu.", "boot.menu")];
+    },
+  });
+
+  function modMenuReturn() {
+    return (LT.game.flags && LT.game.flags.modMenuReturn) || "boot.menu";
+  }
+
+  LT.defineNode({
+    id: "boot.mod-menu",
+    ui: "options",
+    title: "Mod Menu",
+    chrome: { left: false, right: false },
+    getContent: function () {
+      var list = typeof LT.listModMenus === "function" ? LT.listModMenus() : [];
+      var html =
+        "<p>Installed mods can inject a settings page here. Enable a mod in KittyLoader, Apply, and reload if a page is missing.</p>";
+      if (!list.length) {
+        return html + "<p>No mods have registered a menu yet.</p>";
+      }
+      html += "<ul class='mod-menu-index'>";
+      var i;
+      for (i = 0; i < list.length; i++) {
+        var spec = list[i];
+        html +=
+          "<li><b>" +
+          (spec.name || spec.id) +
+          "</b>" +
+          (spec.author ? " <span class='muted'>by " + spec.author + "</span>" : "") +
+          (spec.description ? "<br><span class='muted'>" + spec.description + "</span>" : "") +
+          "</li>";
+      }
+      html += "</ul>";
+      return html;
+    },
+    getResponses: function () {
+      var list = [new LT.Response("Back", "Leave the mod menu.", modMenuReturn())];
+      var menus = typeof LT.listModMenus === "function" ? LT.listModMenus() : [];
+      var i;
+      for (i = 0; i < menus.length; i++) {
+        (function (spec) {
+          list.push(
+            new LT.Response(spec.name || spec.id, spec.description || "Open this mod's settings.", null, function () {
+              LT.openModMenuPage(spec.id);
+            }),
+          );
+        })(menus[i]);
+      }
+      list.push(new LT.Response("Enabled list", "See KittyLoader apply order.", "boot.mods"));
+      return list;
+    },
+  });
+
+  LT.defineNode({
+    id: "boot.mod-config",
+    ui: "options",
+    title: function () {
+      var spec = typeof LT.getModMenu === "function" && LT.game.flags ? LT.getModMenu(LT.game.flags.modMenuId) : null;
+      return (spec && spec.name) || "Mod settings";
+    },
+    chrome: { left: false, right: false },
+    getContent: function () {
+      var spec = typeof LT.getModMenu === "function" && LT.game.flags ? LT.getModMenu(LT.game.flags.modMenuId) : null;
+      if (!spec) return "<p>That mod menu is not loaded.</p>";
+      var inner = typeof spec.getHtml === "function" ? spec.getHtml() : "";
+      return '<div class="mod-menu-page" data-mod-menu="' + spec.id + '">' + (inner || "<p>This mod has not injected any settings HTML.</p>") + "</div>";
+    },
+    getResponses: function () {
+      return [new LT.Response("Back", "Return to the mod list.", "boot.mod-menu")];
     },
   });
 

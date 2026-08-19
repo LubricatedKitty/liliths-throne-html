@@ -9,35 +9,41 @@
     FEMININE_STRONG: { id: "FEMININE_STRONG", name: "Very Feminine", value: 90, colour: Colour.FEMININE },
   };
 
-  function gender(id, name, hasPenis, hasVagina, hasBreasts, feminine, colour) {
-    return { id: id, name: name, hasPenis: hasPenis, hasVagina: hasVagina, hasBreasts: hasBreasts, feminine: feminine, colour: colour };
+  function gender(id, name, hasPenis, hasVagina, hasBreasts, feminine, colour, type) {
+    return { id: id, name: name, hasPenis: hasPenis, hasVagina: hasVagina, hasBreasts: hasBreasts, feminine: feminine, colour: colour, type: type };
   }
 
+  LT.PronounType = {
+    MASCULINE: { id: "MASCULINE", name: "masculine", colour: Colour.MASCULINE },
+    NEUTRAL: { id: "NEUTRAL", name: "androgynous", colour: Colour.ANDROGYNOUS },
+    FEMININE: { id: "FEMININE", name: "feminine", colour: Colour.FEMININE },
+  };
+
   LT.Gender = {
-    M_P_V_B_HERMAPHRODITE: gender("M_P_V_B_HERMAPHRODITE", "hermaphrodite", true, true, true, false, Colour.MASCULINE),
-    M_P_V_HERMAPHRODITE: gender("M_P_V_HERMAPHRODITE", "hermaphrodite", true, true, false, false, Colour.MASCULINE),
-    M_P_B_BUSTYBOY: gender("M_P_B_BUSTYBOY", "bustyboy", true, false, true, false, Colour.MASCULINE),
-    M_P_MALE: gender("M_P_MALE", "male", true, false, false, false, Colour.MASCULINE),
-    M_V_B_BUTCH: gender("M_V_B_BUTCH", "butch", false, true, true, false, Colour.MASCULINE),
-    M_V_CUNTBOY: gender("M_V_CUNTBOY", "cuntboy", false, true, false, false, Colour.MASCULINE),
-    M_B_MANNEQUIN: gender("M_B_MANNEQUIN", "mannequin", false, false, true, false, Colour.MASCULINE),
-    M_MANNEQUIN: gender("M_MANNEQUIN", "mannequin", false, false, false, false, Colour.MASCULINE),
-    F_P_V_B_FUTANARI: gender("F_P_V_B_FUTANARI", "futanari", true, true, true, true, Colour.FEMININE),
-    F_P_V_FUTANARI: gender("F_P_V_FUTANARI", "futanari", true, true, false, true, Colour.FEMININE),
-    F_P_B_SHEMALE: gender("F_P_B_SHEMALE", "shemale", true, false, true, true, Colour.FEMININE),
-    F_P_TRAP: gender("F_P_TRAP", "trap", true, false, false, true, Colour.FEMININE),
-    F_V_B_FEMALE: gender("F_V_B_FEMALE", "female", false, true, true, true, Colour.FEMININE),
-    F_V_FEMALE: gender("F_V_FEMALE", "female", false, true, false, true, Colour.FEMININE),
-    F_B_DOLL: gender("F_B_DOLL", "doll", false, false, true, true, Colour.FEMININE),
-    F_DOLL: gender("F_DOLL", "doll", false, false, false, true, Colour.FEMININE),
-    N_P_V_B_HERMAPHRODITE: gender("N_P_V_B_HERMAPHRODITE", "hermaphrodite", true, true, true, true, Colour.ANDROGYNOUS),
-    N_P_V_HERMAPHRODITE: gender("N_P_V_HERMAPHRODITE", "hermaphrodite", true, true, false, true, Colour.ANDROGYNOUS),
-    N_P_B_SHEMALE: gender("N_P_B_SHEMALE", "shemale", true, false, true, true, Colour.ANDROGYNOUS),
-    N_P_TRAP: gender("N_P_TRAP", "trap", true, false, false, true, Colour.ANDROGYNOUS),
-    N_V_B_TOMBOY: gender("N_V_B_TOMBOY", "tomboy", false, true, true, true, Colour.ANDROGYNOUS),
-    N_V_TOMBOY: gender("N_V_TOMBOY", "tomboy", false, true, false, true, Colour.ANDROGYNOUS),
-    N_B_DOLL: gender("N_B_DOLL", "doll", false, false, true, true, Colour.ANDROGYNOUS),
-    N_NEUTER: gender("N_NEUTER", "neuter", false, false, false, true, Colour.ANDROGYNOUS),
+    M_P_V_B_HERMAPHRODITE: gender("M_P_V_B_HERMAPHRODITE", "hermaphrodite", true, true, true, false, Colour.MASCULINE, "MASCULINE"),
+    M_P_V_HERMAPHRODITE: gender("M_P_V_HERMAPHRODITE", "hermaphrodite", true, true, false, false, Colour.MASCULINE, "MASCULINE"),
+    M_P_B_BUSTYBOY: gender("M_P_B_BUSTYBOY", "bustyboy", true, false, true, false, Colour.MASCULINE, "MASCULINE"),
+    M_P_MALE: gender("M_P_MALE", "male", true, false, false, false, Colour.MASCULINE, "MASCULINE"),
+    M_V_B_BUTCH: gender("M_V_B_BUTCH", "butch", false, true, true, false, Colour.MASCULINE, "MASCULINE"),
+    M_V_CUNTBOY: gender("M_V_CUNTBOY", "cuntboy", false, true, false, false, Colour.MASCULINE, "MASCULINE"),
+    M_B_MANNEQUIN: gender("M_B_MANNEQUIN", "mannequin", false, false, true, false, Colour.MASCULINE, "MASCULINE"),
+    M_MANNEQUIN: gender("M_MANNEQUIN", "mannequin", false, false, false, false, Colour.MASCULINE, "MASCULINE"),
+    F_P_V_B_FUTANARI: gender("F_P_V_B_FUTANARI", "futanari", true, true, true, true, Colour.FEMININE, "FEMININE"),
+    F_P_V_FUTANARI: gender("F_P_V_FUTANARI", "futanari", true, true, false, true, Colour.FEMININE, "FEMININE"),
+    F_P_B_SHEMALE: gender("F_P_B_SHEMALE", "shemale", true, false, true, true, Colour.FEMININE, "FEMININE"),
+    F_P_TRAP: gender("F_P_TRAP", "trap", true, false, false, true, Colour.FEMININE, "FEMININE"),
+    F_V_B_FEMALE: gender("F_V_B_FEMALE", "female", false, true, true, true, Colour.FEMININE, "FEMININE"),
+    F_V_FEMALE: gender("F_V_FEMALE", "female", false, true, false, true, Colour.FEMININE, "FEMININE"),
+    F_B_DOLL: gender("F_B_DOLL", "doll", false, false, true, true, Colour.FEMININE, "FEMININE"),
+    F_DOLL: gender("F_DOLL", "doll", false, false, false, true, Colour.FEMININE, "FEMININE"),
+    N_P_V_B_HERMAPHRODITE: gender("N_P_V_B_HERMAPHRODITE", "hermaphrodite", true, true, true, true, Colour.ANDROGYNOUS, "NEUTRAL"),
+    N_P_V_HERMAPHRODITE: gender("N_P_V_HERMAPHRODITE", "hermaphrodite", true, true, false, true, Colour.ANDROGYNOUS, "NEUTRAL"),
+    N_P_B_SHEMALE: gender("N_P_B_SHEMALE", "shemale", true, false, true, true, Colour.ANDROGYNOUS, "NEUTRAL"),
+    N_P_TRAP: gender("N_P_TRAP", "trap", true, false, false, true, Colour.ANDROGYNOUS, "NEUTRAL"),
+    N_V_B_TOMBOY: gender("N_V_B_TOMBOY", "tomboy", false, true, true, true, Colour.ANDROGYNOUS, "NEUTRAL"),
+    N_V_TOMBOY: gender("N_V_TOMBOY", "tomboy", false, true, false, true, Colour.ANDROGYNOUS, "NEUTRAL"),
+    N_B_DOLL: gender("N_B_DOLL", "doll", false, false, true, true, Colour.ANDROGYNOUS, "NEUTRAL"),
+    N_NEUTER: gender("N_NEUTER", "neuter", false, false, false, true, Colour.ANDROGYNOUS, "NEUTRAL"),
   };
   LT.Gender.MALE = LT.Gender.M_P_MALE;
   LT.Gender.FEMALE = LT.Gender.F_V_B_FEMALE;

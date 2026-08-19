@@ -1,0 +1,632 @@
+[
+  {
+    "x": 7,
+    "y": 6,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 9,
+    "y": 6,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 10,
+    "y": 6,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 11,
+    "y": 6,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 13,
+    "y": 6,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 6,
+    "y": 7,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 7,
+    "y": 7,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 9,
+    "y": 7,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 10,
+    "y": 7,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 11,
+    "y": 7,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 13,
+    "y": 7,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 14,
+    "y": 7,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 10,
+    "y": 8,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 6,
+    "y": 9,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 7,
+    "y": 9,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 8,
+    "y": 9,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 9,
+    "y": 9,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 10,
+    "y": 9,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 11,
+    "y": 9,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 12,
+    "y": 9,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 13,
+    "y": 9,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 14,
+    "y": 9,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 10,
+    "y": 10,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 7,
+    "y": 11,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 8,
+    "y": 11,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 9,
+    "y": 11,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 10,
+    "y": 11,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 11,
+    "y": 11,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 12,
+    "y": 11,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 13,
+    "y": 11,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 7,
+    "y": 12,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 9,
+    "y": 12,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 10,
+    "y": 12,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 11,
+    "y": 12,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 13,
+    "y": 12,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 7,
+    "y": 13,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 9,
+    "y": 13,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 10,
+    "y": 13,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 11,
+    "y": 13,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 13,
+    "y": 13,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 7,
+    "y": 14,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 9,
+    "y": 14,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 10,
+    "y": 14,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 11,
+    "y": 14,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  },
+  {
+    "x": 13,
+    "y": 14,
+    "location": {
+      "name": "Corridor",
+      "color": "#bbbbbb",
+      "placeType": "KITTY_CORRIDOR",
+      "passage": "place.KITTY_CORRIDOR",
+      "description": "A connecting passage.",
+      "icon": {
+        "src": "assets/map/icons/GENERIC_EMPTY_TILE.svg"
+      }
+    }
+  }
+]

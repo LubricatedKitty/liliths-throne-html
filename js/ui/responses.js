@@ -95,10 +95,12 @@
               LT.combat.responseTab = i;
             }
             if (LT.sex && LT.game && LT.game.currentNode && LT.game.currentNode.id === "sex.scene") {
-              LT.sex.responseTab = i;
+              LT.sex.responseTab = typeof LT.sexTabInternal === "function" ? LT.sexTabInternal(i) : i;
             }
             if (LT.game && LT.game.currentNode && LT.game.currentNode.getResponses) {
-              var raw = LT.game.currentNode.getResponses(LT.game, tab) || [];
+              var asked = tab;
+              if (LT.game.currentNode.id === "sex.scene" && typeof LT.sexTabInternal === "function") asked = LT.sexTabInternal(i);
+              var raw = LT.game.currentNode.getResponses(LT.game, asked) || [];
               currentResponses = [];
               for (var r = 0; r < raw.length; r++) {
                 if (!raw[r]) continue;

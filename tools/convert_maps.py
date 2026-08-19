@@ -1,5 +1,8 @@
 """Offline PNG + colour-table -> Lifebound-style sparse grid JS.
 
+Reads Lilith's Throne v0.4.10 at rebuild time only. Play uses the written
+js/maps files and assets/map/icons — the 0.4.10 tree is not required to play.
+
 Not used at runtime. Re-run after map art or WorldType colour tables change:
 
     python tools/convert_maps.py
@@ -601,7 +604,10 @@ def emit_js(grids: dict, meta: dict, places: dict) -> str:
     for pid, info in sorted(places.items()):
         if pid in IMPASSABLE:
             continue
-        lines.append("  LT.places." + js_ident(pid) + " = " + json.dumps(info, ensure_ascii=False) + ";")
+        # svgFile is converter-internal (source SVG on the 0.4.10 tree).
+        # Runtime uses LT.placeVisuals / assets/map/icons, never this path.
+        dumped = {k: v for k, v in info.items() if k != "svgFile"}
+        lines.append("  LT.places." + js_ident(pid) + " = " + json.dumps(dumped, ensure_ascii=False) + ";")
     lines.append("})();")
     lines.append("")
     return "\n".join(lines)

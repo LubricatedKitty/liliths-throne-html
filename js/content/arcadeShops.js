@@ -486,16 +486,15 @@
     getContent: function () {
       var info = (typeof getCurrentTile === "function" && getCurrentTile() && getCurrentTile().location) || {};
       var html = "<p>" + (info.description || "The warehouse district.") + "</p>";
-      if (LT.game.flags && LT.game.flags.nyanQuest === "RELATIONSHIP_NYAN_2_STOCK_ISSUES_AGREED_TO_HELP") {
-        html += LT.parseFromXML("places/dominion/warehouseDistrict/kaysTextiles", "WAREHOUSE_DISTRICT_KAYS_TEXTILES");
-      }
+      html += LT.parseFromXML("places/dominion/warehouseDistrict/kaysTextiles", "WAREHOUSE_DISTRICT_KAYS_TEXTILES");
       return html;
     },
     getResponses: function () {
       var list = LT.travelResponses ? LT.travelResponses() : [null];
-      if (LT.game.flags && LT.game.flags.nyanQuest === "RELATIONSHIP_NYAN_2_STOCK_ISSUES_AGREED_TO_HELP") {
-        list.push(new LT.Response("Kay's Textiles", "Find the warehouse Nyan told you about.", "kay.entry"));
-      }
+      var work = typeof LT.isWorkTime === "function" ? LT.isWorkTime() : true;
+      var enter = new LT.Response("Kay's Textiles", "Enter Kay's Textiles.", "kay.entry");
+      if (!work) enter.disable("Kay's Textiles is closed. Opening hours are 06:00–22:00.");
+      list.push(enter);
       return list;
     },
   });
@@ -505,16 +504,24 @@
     ui: "dialogue",
     title: "Kay's Textiles",
     secondsPassed: 120,
-    travelDisabled: true,
+    travelDisabled: false,
     chrome: { left: true, right: true },
+    applyPreParsingEffects: function () {
+      if (typeof LT.ensureKay === "function") LT.ensureKay();
+    },
     getContent: function () {
       return LT.parseFromXML("places/dominion/warehouseDistrict/kaysTextiles", "INITIAL_ENTRY");
     },
     getResponses: function () {
-      return [
+      var list = [
         new LT.Response("Leave", "Leave the warehouse.", "place.DOMINION_WAREHOUSES"),
-        new LT.Response("Confront", "Confront the bounty hunters who have seized Kay's business.", "kay.dobermanns"),
       ];
+      var quest = LT.game.flags && LT.game.flags.nyanQuest;
+      var beaten = quest === "RELATIONSHIP_NYAN_4_STOCK_ISSUES_SUPPLIERS_BEATEN" || quest === "complete" || LT.game.flags.nyanQuestComplete;
+      if (!beaten) {
+        list.push(new LT.Response("Confront", "Confront the bounty hunters who have seized Kay's business.", "kay.dobermanns"));
+      }
+      return list;
     },
   });
 
@@ -523,7 +530,7 @@
     ui: "dialogue",
     title: "Overseer Station",
     secondsPassed: 120,
-    travelDisabled: true,
+    travelDisabled: false,
     chrome: { left: true, right: true },
     getContent: function () {
       return LT.parseFromXML("places/dominion/warehouseDistrict/kaysTextiles", "DOBERMANNS");
@@ -568,11 +575,33 @@
     ui: "dialogue",
     title: "Victory",
     secondsPassed: 60,
-    travelDisabled: true,
+    travelDisabled: false,
     chrome: { left: true, right: true },
     getContent: function () {
       LT.game.flags.nyanQuest = "RELATIONSHIP_NYAN_4_STOCK_ISSUES_SUPPLIERS_BEATEN";
       return LT.parseFromXML("places/dominion/warehouseDistrict/kaysTextiles", "DOBERMANNS_COMBAT_PLAYER_VICTORY");
+    },
+    getResponses: function () {
+      return [
+        new LT.Response("Let them go", "Watch Wolfgang and Karl leave, then see who is behind the office door.", "kay.banish"),
+        new LT.Response("Leave", "Return to the warehouse district. You should report back to Nyan.", "place.DOMINION_WAREHOUSES"),
+      ];
+    },
+  });
+
+  LT.defineNode({
+    id: "kay.banish",
+    ui: "dialogue",
+    title: "Kay's Office",
+    secondsPassed: 60,
+    travelDisabled: false,
+    chrome: { left: true, right: true },
+    applyPreParsingEffects: function () {
+      if (typeof LT.ensureKay === "function") LT.ensureKay();
+      if (typeof LT.markCharacterEncountered === "function") LT.markCharacterEncountered("kay");
+    },
+    getContent: function () {
+      return LT.parseFromXML("places/dominion/warehouseDistrict/kaysTextiles", "DOBERMANNS_BANISHED");
     },
     getResponses: function () {
       return [new LT.Response("Leave", "Return to the warehouse district. You should report back to Nyan.", "place.DOMINION_WAREHOUSES")];

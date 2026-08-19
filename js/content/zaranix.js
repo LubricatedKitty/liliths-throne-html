@@ -71,15 +71,43 @@
           }),
         );
       }
-      list.push(
-        new LT.Response("Climb fence", "Climb over the garden's fence and sneak inside.", null).disable(
-          "The garden and the rest of Zaranix's house are not in this build.",
-        ),
-      );
+      if (!workTime()) {
+        list.push(
+          new LT.Response(
+            typeof LT.canFlyOverZaranix === "function" && LT.canFlyOverZaranix() ? "Fly over fence" : "Climb fence",
+            "The house is sure to be securely locked up at such an unsociable time.",
+            null,
+          ).disable("The house is sure to be securely locked up at such an unsociable time."),
+        );
+      } else if (typeof LT.canFlyOverZaranix === "function" && LT.canFlyOverZaranix()) {
+        list.push(
+          new LT.Response("Fly over fence", "Fly over the garden's fence and see if there's a way in through there.", "place.ZARANIX_GF_GARDEN_ENTRY", function () {
+            LT.game.flags.zaranixDiscoveredHome = true;
+            if (typeof LT.enterZaranixHouse === "function") LT.enterZaranixHouse("ZARANIX_GF_GARDEN_ENTRY");
+            LT.game.textStart =
+              "<p>A small fence like the one before you is no obstacle for someone who can fly. You take a little run up before launching yourself into the air. Quickly gaining altitude, you wheel around and swoop down into the garden adjoining Zaranix's home.</p>";
+          }),
+        );
+      } else {
+        list.push(
+          new LT.Response("Climb fence", "Climb over the garden's fence and see if there's a way in through there.", "place.ZARANIX_GF_GARDEN_ENTRY", function () {
+            LT.game.flags.zaranixDiscoveredHome = true;
+            if (typeof LT.enterZaranixHouse === "function") LT.enterZaranixHouse("ZARANIX_GF_GARDEN_ENTRY");
+            LT.game.textStart =
+              "<p>Deciding to try and sneak your way into Zaranix's home, you loiter about the fence separating his garden from the public street, waiting for an opportunity to scale the obstacle. Once you're sure that nobody is looking your way, you quickly climb up the iron bars of the fence, and, swinging your legs over the top, you jump down into the private garden.</p>";
+          }),
+        );
+      }
       if (LT.game.flags.zaranixKickedDownDoor) {
         list.push(
           new LT.Response("Kick down door", "After your last entrance, the front door has been reinforced. You're unable to enter like this again.", null).disable(
             "After your last entrance, the front door has been reinforced.",
+          ),
+        );
+      } else if (typeof LT.zaranixPhysique === "function" && LT.zaranixPhysique() < 35) {
+        list.push(
+          new LT.Response("Kick down door", "You don't think you're strong enough to kick down such a sturdy-looking door. (Requires 35 physique.)", null).disable(
+            "You don't think you're strong enough to kick down such a sturdy-looking door. (Requires 35 physique.)",
           ),
         );
       } else {
@@ -90,7 +118,8 @@
             LT.game.flags.zaranixDiscoveredHome = true;
             LT.game.flags.zaranixMaidsHostile = true;
             LT.game.flags.zaranixKickedDownDoor = true;
-            placeAmberOnStreet();
+            if (typeof LT.enterZaranixHouse === "function") LT.enterZaranixHouse("ZARANIX_GF_ENTRANCE");
+            a.location = { world: "ZARANIX_HOUSE_GROUND_FLOOR", place: "ZARANIX_GF_ENTRANCE" };
           }).withColour(LT.Colour.GENERIC_BAD),
         );
       }
@@ -120,13 +149,17 @@
             sendAmberHome();
             LT.game.textStart = xml("KNOCK_ON_DOOR_SLAMMED_IN_FACE");
           }),
-          new LT.Response("Beg", "Beg the maid to let you in.", null).disable("Amber's submissive door path leads into the house. The rest of 1-H is not in this build."),
+          new LT.Response("Beg", "Beg the maid to let you in.", "zaranix.beg"),
         ];
         if (knockCount() >= 4) {
           list.push(
-            new LT.Response("Enter", "It looks like your persistence has paid off!", null).disable(
-              "That audience is inside Zaranix's house, which is not in this build.",
-            ),
+            new LT.Response("Enter", "It looks like your persistence has paid off!", "zaranix.meeting", function () {
+              if (typeof LT.enterZaranixHouse === "function") LT.enterZaranixHouse("ZARANIX_GF_LOUNGE");
+              if (typeof LT.ensureAmber === "function") {
+                LT.ensureAmber().playerKnowsName = true;
+                LT.ensureAmber().location = { world: "ZARANIX_HOUSE_GROUND_FLOOR", place: "ZARANIX_GF_LOUNGE" };
+              }
+            }),
           );
         }
         return list;
@@ -162,7 +195,7 @@
           sendAmberHome();
           LT.game.textStart = xml("KNOCK_ON_DOOR_SLAMMED_IN_FACE");
         }),
-        new LT.Response("Beg", "Beg the maid to let you in.", null).disable("Amber's submissive door path leads into the house. The rest of 1-H is not in this build."),
+        new LT.Response("Beg", "Beg the maid to let you in.", "zaranix.beg"),
       ];
     },
   });
@@ -228,8 +261,10 @@
       return [
         null,
         typeof LT.lootResponse === "function" ? LT.lootResponse(LT.ensureAmber(), "zaranix.amberVictory") : null,
-        new LT.Response("Continue", "The rest of Zaranix's house is not in this build. Step back out to the street.", "place.DOMINION_DEMON_HOME_ZARANIX", function () {
-          sendAmberHome();
+        new LT.Response("Continue", "Continue into Zaranix's house.", "place.ZARANIX_GF_ENTRANCE", function () {
+          LT.game.flags.zaranixAmberSubdued = true;
+          if (typeof LT.enterZaranixHouse === "function") LT.enterZaranixHouse("ZARANIX_GF_ENTRANCE");
+          LT.ensureAmber().location = { world: "ZARANIX_HOUSE_GROUND_FLOOR", place: "ZARANIX_GF_ENTRANCE" };
         }),
         LT.ResponseSex("Use Amber", "Have some fun with this fiery maid.", {
           partner: LT.ensureAmber(),
@@ -244,6 +279,7 @@
           "Amber's fiery personality is seriously turning you on. You can't bring yourself to take the dominant role, but you <i>do</i> want to have sex with her. Perhaps if you submitted, she'd be willing to fuck you?",
           {
             partner: LT.ensureAmber(),
+            manager: "amber_doggy",
             playerDom: false,
             consensual: true,
             startText:
@@ -277,6 +313,7 @@
         null,
         LT.ResponseSex("Used", "Amber starts fucking you.", {
           partner: LT.ensureAmber(),
+          manager: "amber_doggy",
           playerDom: false,
           consensual: false,
           positionName: "All fours",
@@ -309,8 +346,10 @@
     getResponses: function () {
       return [
         null,
-        new LT.Response("Continue", "The rest of Zaranix's house is not in this build. Step back out to the street.", "place.DOMINION_DEMON_HOME_ZARANIX", function () {
-          sendAmberHome();
+        new LT.Response("Continue", "Continue into Zaranix's house.", "place.ZARANIX_GF_ENTRANCE", function () {
+          LT.game.flags.zaranixAmberSubdued = true;
+          if (typeof LT.enterZaranixHouse === "function") LT.enterZaranixHouse("ZARANIX_GF_ENTRANCE");
+          LT.ensureAmber().location = { world: "ZARANIX_HOUSE_GROUND_FLOOR", place: "ZARANIX_GF_ENTRANCE" };
         }),
       ];
     },
@@ -336,6 +375,340 @@
           sendAmberHome();
         }),
       ];
+    },
+  });
+
+  LT.defineNode({
+    id: "zaranix.beg",
+    ui: "dialogue",
+    title: "Zaranix's Home",
+    secondsPassed: 30,
+    travelDisabled: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("KNOCK_ON_DOOR_ASK_FOR_ARTHUR_BEG");
+    },
+    getResponses: function () {
+      var list = [
+        new LT.Response("Back out", "Stand up and step back. You're definitely not willing to do anything like that.", "zaranix.outside", function () {
+          sendAmberHome();
+          LT.game.textStart = xml("KNOCK_ON_DOOR_ASK_FOR_ARTHUR_BEG_REFUSE");
+        }),
+      ];
+      if (typeof LT.zaranixFootOn === "function" && LT.zaranixFootOn()) {
+        list.push(
+          new LT.Response("Reluctant lick", "If this is what it's going to take to finally meet Arthur, you suppose that you'll do it.", "zaranix.begReluctant", function () {
+            LT.ensureAmber().playerKnowsName = true;
+          }),
+        );
+        list.push(
+          new LT.Response("Eager lick", "Immediately drop down onto all fours and enthusiastically lick the maid's shoes.", "zaranix.begEager", function () {
+            LT.ensureAmber().playerKnowsName = true;
+          }),
+        );
+      } else {
+        list.push(
+          new LT.Response("Good doggy", "Do as this dominant succubus says and drop down onto all fours, before telling her that you're a good doggy.", "zaranix.begDoggy", function () {
+            LT.ensureAmber().playerKnowsName = true;
+          }),
+        );
+      }
+      return list;
+    },
+  });
+
+  function goLounge() {
+    if (typeof LT.enterZaranixHouse === "function") LT.enterZaranixHouse("ZARANIX_GF_LOUNGE");
+    var a = LT.ensureAmber();
+    a.location = { world: "ZARANIX_HOUSE_GROUND_FLOOR", place: "ZARANIX_GF_LOUNGE" };
+    if (typeof LT.ensureZaranix === "function") {
+      LT.ensureZaranix().location = { world: "ZARANIX_HOUSE_GROUND_FLOOR", place: "ZARANIX_GF_LOUNGE" };
+    }
+  }
+
+  LT.defineNode({
+    id: "zaranix.begDoggy",
+    ui: "dialogue",
+    title: "Zaranix's Home",
+    secondsPassed: 60,
+    travelDisabled: true,
+    continuesDialogue: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("OUTSIDE_KNOCK_ON_DOOR_ASK_FOR_ARTHUR_GOOD_DOGGY");
+    },
+    getResponses: function () {
+      return [
+        null,
+        new LT.Response("Inside", "Crawl alongside Amber as she leads you into the house.", "zaranix.meeting", goLounge),
+      ];
+    },
+  });
+
+  LT.defineNode({
+    id: "zaranix.begReluctant",
+    ui: "dialogue",
+    title: "Zaranix's Home",
+    secondsPassed: 60,
+    travelDisabled: true,
+    continuesDialogue: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("KNOCK_ON_DOOR_ASK_FOR_ARTHUR_BEG_RELUCTANT_LICK");
+    },
+    getResponses: function () {
+      return [
+        null,
+        new LT.Response("Inside", "Crawl alongside Amber as she leads you into the house.", "zaranix.meeting", goLounge),
+      ];
+    },
+  });
+
+  LT.defineNode({
+    id: "zaranix.begEager",
+    ui: "dialogue",
+    title: "Zaranix's Home",
+    secondsPassed: 60,
+    travelDisabled: true,
+    continuesDialogue: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("KNOCK_ON_DOOR_ASK_FOR_ARTHUR_BEG_EAGER_LICK");
+    },
+    getResponses: function () {
+      return [
+        null,
+        new LT.Response("Wait", "Do as Amber says and wait for her return.", "zaranix.meeting", function () {
+          LT.game.textStart = xml("KNOCK_ON_DOOR_ASK_FOR_ARTHUR_BEG_WAITING");
+          goLounge();
+        }),
+        new LT.Response("Lick soles", "Don't let Amber get away just yet! You still haven't cleaned the soles of her shoes!", "zaranix.begSoles"),
+      ];
+    },
+  });
+
+  LT.defineNode({
+    id: "zaranix.begSoles",
+    ui: "dialogue",
+    title: "Zaranix's Home",
+    secondsPassed: 30,
+    travelDisabled: true,
+    continuesDialogue: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("KNOCK_ON_DOOR_ASK_FOR_ARTHUR_BEG_EAGER_LICK_SOLES");
+    },
+    getResponses: function () {
+      return [
+        null,
+        new LT.Response("Inside", "Crawl alongside Amber as she leads you into the house.", "zaranix.meeting", goLounge),
+      ];
+    },
+  });
+
+  LT.defineNode({
+    id: "zaranix.meeting",
+    ui: "dialogue",
+    title: "Lounge",
+    secondsPassed: 60,
+    travelDisabled: true,
+    chrome: { left: true, right: true },
+    applyPreParsingEffects: function () {
+      LT.game.flags.amberRepeatEncountered = true;
+      if (typeof LT.ensureZaranix === "function") LT.ensureZaranix();
+    },
+    getContent: function () {
+      return xml("MEETING_ZARANIX");
+    },
+    getResponses: function () {
+      return [
+        null,
+        new LT.Response("Sit on floor", "Do as Amber commands and sit on the floor.", "zaranix.sitFloor", function () {
+          LT.game.flags.amberSatOnFloor = true;
+          if (typeof LT.ensureZaranix === "function") {
+            LT.ensureZaranix().location = { world: "ZARANIX_HOUSE_GROUND_FLOOR", place: "ZARANIX_GF_LOUNGE" };
+          }
+        }),
+        new LT.Response("Sit on sofa", "Disobey Amber and sit on one of the sofas.", "zaranix.sitSofa", function () {
+          if (typeof LT.ensureZaranix === "function") {
+            LT.ensureZaranix().location = { world: "ZARANIX_HOUSE_GROUND_FLOOR", place: "ZARANIX_GF_LOUNGE" };
+          }
+        }),
+      ];
+    },
+  });
+
+  function afterSitResponses() {
+    return [
+      null,
+      new LT.Response("Hold back", "Simply say that Lilaya wants Arthur back, and avoid telling Zaranix anything about why.", "zaranix.holdBack"),
+      new LT.Response("Explain everything", "Tell Zaranix all about your appearance in this world, and how Lilaya needs Arthur's help in order to find out what's going on.", "zaranix.explainAll"),
+    ];
+  }
+
+  LT.defineNode({
+    id: "zaranix.sitFloor",
+    ui: "dialogue",
+    title: "Lounge",
+    secondsPassed: 30,
+    travelDisabled: true,
+    continuesDialogue: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("MEETING_ZARANIX_SIT_FLOOR");
+    },
+    getResponses: afterSitResponses,
+  });
+
+  LT.defineNode({
+    id: "zaranix.sitSofa",
+    ui: "dialogue",
+    title: "Lounge",
+    secondsPassed: 30,
+    travelDisabled: true,
+    continuesDialogue: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("MEETING_ZARANIX_SIT_SOFA");
+    },
+    getResponses: afterSitResponses,
+  });
+
+  function meetArthur() {
+    if (typeof LT.ensureArthur === "function") {
+      LT.ensureArthur().location = { world: "ZARANIX_HOUSE_GROUND_FLOOR", place: "ZARANIX_GF_LOUNGE" };
+    }
+    LT.game.textEnd = typeof LT.rescueArthur === "function" ? LT.rescueArthur({ move: false }) : "";
+  }
+
+  function sendArthurToLab() {
+    if (typeof LT.placeArthurInLab === "function") LT.placeArthurInLab();
+  }
+
+  LT.defineNode({
+    id: "zaranix.holdBack",
+    ui: "dialogue",
+    title: "Lounge",
+    secondsPassed: 30,
+    travelDisabled: true,
+    continuesDialogue: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("MEETING_ZARANIX_HOLD_BACK");
+    },
+    getResponses: function () {
+      return [null, new LT.Response("Arthur", "You finally come face-to-face with your elusive quarry.", "zaranix.meetArthur", meetArthur)];
+    },
+  });
+
+  LT.defineNode({
+    id: "zaranix.explainAll",
+    ui: "dialogue",
+    title: "Lounge",
+    secondsPassed: 30,
+    travelDisabled: true,
+    continuesDialogue: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("MEETING_ZARANIX_EXPLAIN_EVERYTHING");
+    },
+    getResponses: function () {
+      return [null, new LT.Response("Arthur", "You finally come face-to-face with your elusive quarry.", "zaranix.meetArthur", meetArthur)];
+    },
+  });
+
+  LT.defineNode({
+    id: "zaranix.meetArthur",
+    ui: "dialogue",
+    title: "Lounge",
+    secondsPassed: 30,
+    travelDisabled: true,
+    continuesDialogue: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("MEETING_ZARANIX_ARTHUR");
+    },
+    getResponses: function () {
+      return [
+        null,
+        new LT.Response("Leave", "Refuse to perform any sexual favours for Zaranix or Amber and take your leave.", "zaranix.refuseSex", function () {
+          sendArthurToLab();
+        }),
+        LT.ResponseSex("'Thank' Zaranix", "Show Zaranix how grateful you are.", {
+          partner: typeof LT.ensureZaranix === "function" ? LT.ensureZaranix() : { id: "zaranix", name: "Zaranix" },
+          playerDom: false,
+          consensual: true,
+          startText: xml("MEETING_ZARANIX_ARTHUR_THANK_ZARANIX") + xml("MEETING_ZARANIX_ARTHUR_THANK_ZARANIX_START_SEX"),
+          postSexNode: "zaranix.afterThankZaranix",
+        }),
+        LT.ResponseSex("'Thank' Amber", "Show Amber how grateful you are.", {
+          partner: LT.ensureAmber(),
+          playerDom: false,
+          consensual: true,
+          startText: xml("MEETING_ZARANIX_ARTHUR_THANK_AMBER"),
+          postSexNode: "zaranix.afterThankAmber",
+        }),
+      ];
+    },
+  });
+
+  LT.defineNode({
+    id: "zaranix.refuseSex",
+    ui: "dialogue",
+    title: "Zaranix's Home",
+    secondsPassed: 30,
+    travelDisabled: true,
+    chrome: { left: true, right: true },
+    applyPreParsingEffects: function () {
+      sendArthurToLab();
+      if (typeof LT.resetZaranixHouse === "function") LT.resetZaranixHouse();
+      if (typeof LT.enterWorld === "function") LT.enterWorld("DOMINION", "DOMINION_DEMON_HOME_ZARANIX");
+    },
+    getContent: function () {
+      return xml("MEETING_ZARANIX_ARTHUR_REFUSE_SEX");
+    },
+    getResponses: function () {
+      return [null, new LT.Response("Continue", "Continue on your journey.", "place.DOMINION_DEMON_HOME_ZARANIX")];
+    },
+  });
+
+  LT.defineNode({
+    id: "zaranix.afterThankZaranix",
+    ui: "dialogue",
+    title: "Zaranix is finished",
+    secondsPassed: 60,
+    travelDisabled: true,
+    chrome: { left: true, right: true },
+    applyPreParsingEffects: function () {
+      sendArthurToLab();
+      if (typeof LT.resetZaranixHouse === "function") LT.resetZaranixHouse();
+      if (typeof LT.enterWorld === "function") LT.enterWorld("DOMINION", "DOMINION_DEMON_HOME_ZARANIX");
+    },
+    getContent: function () {
+      return xml("AFTER_SEX_THANKING_ZARANIX");
+    },
+    getResponses: function () {
+      return [null, new LT.Response("Continue", "Continue on your journey.", "place.DOMINION_DEMON_HOME_ZARANIX")];
+    },
+  });
+
+  LT.defineNode({
+    id: "zaranix.afterThankAmber",
+    ui: "dialogue",
+    title: "Amber is finished",
+    secondsPassed: 60,
+    travelDisabled: true,
+    chrome: { left: true, right: true },
+    applyPreParsingEffects: function () {
+      sendArthurToLab();
+      if (typeof LT.resetZaranixHouse === "function") LT.resetZaranixHouse();
+      if (typeof LT.enterWorld === "function") LT.enterWorld("DOMINION", "DOMINION_DEMON_HOME_ZARANIX");
+    },
+    getContent: function () {
+      return xml("AFTER_SEX_THANKING_AMBER");
+    },
+    getResponses: function () {
+      return [null, new LT.Response("Continue", "Continue on your journey.", "place.DOMINION_DEMON_HOME_ZARANIX")];
     },
   });
 })();

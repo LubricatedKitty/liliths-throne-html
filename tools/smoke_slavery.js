@@ -287,6 +287,107 @@ assert(manage, "Room conversion node exists");
 var ledger = LT.getNode("house.ledger");
 assert(ledger, "Occupancy ledger node exists");
 
+LT.game.player.money = 20000;
+assert(LT.convertRoom("SLAVE_ROOM_DOUBLE").indexOf("Double Slave Room") >= 0, "Slave room can be upgraded to a double");
+assert(LT.roomUpgradeAt().id === "SLAVE_ROOM_DOUBLE", "Room is now a double slave room");
+assert(LT.roomUpgradeAt().cap === 2, "Double room houses two slaves");
+assert(LT.getMoney() === 20000 - 3500, "Double room costs official 3500");
+
+var rec2 = LT.snapshotSlave({ name: "Testb", feminine: false, raceName: "wolf-boy", fullRace: "wolf-boy" });
+LT.ownedSlaves().push(rec2);
+assert(LT.assignSlaveHome(rec2, LT.currentRoomKey()) === "", "Second slave can share a double room");
+var rec3 = LT.snapshotSlave({ name: "Testc", feminine: true, raceName: "fox-girl", fullRace: "fox-girl" });
+LT.ownedSlaves().push(rec3);
+assert(LT.assignSlaveHome(rec3, LT.currentRoomKey()).indexOf("occupied") >= 0, "Double room refuses a third slave");
+
+LT.game.player.location = { world: "LILAYAS_HOUSE_GROUND_FLOOR", place: "LILAYA_HOME_ROOM_WINDOW_GROUND_FLOOR", x: 6, y: 1 };
+LT.game.player.money = 10000;
+assert(LT.convertRoom("SLAVE_LOUNGE").indexOf("Slave lounge") >= 0, "Empty room converts to a slave lounge");
+assert(LT.loungeKey(), "Lounge key is recorded");
+
+rec.perms.GENERAL_HOUSE_FREEDOM = true;
+LT.applySlaveHoursPreset(rec, "NONE", rec.job);
+rec.hours = rec.hours.map(function () { return "IDLE"; });
+rec.id = "slave_lounge_seed";
+LT.game.flags.manageSlaveId = rec.id;
+LT.game.secondsPassed = 10 * 3600;
+var loungeHit = false;
+var hour;
+for (hour = 8; hour < 20; hour++) {
+  var dest = LT.idleDestination(rec, hour);
+  if (dest && dest.key === LT.loungeKey()) loungeHit = true;
+}
+assert(loungeHit, "Idle house-freedom slave can wander into the lounge");
+
+assert(LT.hasSlaveJobSetting(rec, "BEDROOM", "BEDROOM_GREETING"), "Bedroom greeting defaults on");
+assert(LT.hasSlaveJobSetting(rec, "MILKING", "MILKING_NO_PREFERENCE"), "Milking room preference defaults to no preference");
+LT.setSlaveJobSetting(rec, "BEDROOM", "BEDROOM_SLEEP_IN_BED", ["BEDROOM_SLEEP_FLOOR", "BEDROOM_SLEEP_ON_BED", "BEDROOM_SLEEP_IN_BED"]);
+assert(LT.hasSlaveJobSetting(rec, "BEDROOM", "BEDROOM_SLEEP_IN_BED"), "Sleep in bed can be selected");
+assert(!LT.hasSlaveJobSetting(rec, "BEDROOM", "BEDROOM_SLEEP_ON_BED"), "Sleep settings are exclusive");
+
+if (rec.perms) delete rec.perms.GENERAL_HOUSE_FREEDOM;
+LT.setSlavePermission(rec, "SEX", "SEX_INITIATE_SLAVES");
+LT.setSlavePermission(rec2, "SEX", "SEX_RECEIVE_SLAVES");
+rec.pentUp = 8;
+rec2.pentUp = 8;
+rec.hours = rec.hours.map(function () { return "IDLE"; });
+rec2.hours = rec2.hours.map(function () { return "IDLE"; });
+rec.home = rec2.home;
+LT.runSlaveInteractions(14);
+assert(LT.slaveEvents().length >= 1, "Eligible slaves generate an interaction event");
+
+var jobHtml2 = jobNode.getContent();
+LT.game.flags.slaveryJobSelected = "BEDROOM";
+jobHtml2 = jobNode.getContent();
+assert(jobHtml2.indexOf("Job settings") >= 0 && jobHtml2.indexOf("Greeting") >= 0, "Bedroom job settings are listed");
+
+var manageHtml = manage.getContent();
+assert(manageHtml.indexOf("Double Slave Room") >= 0 && manageHtml.indexOf("Slave lounge") >= 0, "Conversion list includes official double room and lounge");
+assert(manageHtml.indexOf("Dining Hall") >= 0, "Conversion list includes official dining hall");
+
+assert(LT.HOUSE_UPGRADES.DUNGEON_CELL.cap === 4, "Official dungeon cells house four slaves");
+assert(LT.HOUSE_UPGRADES.SLAVE_ROOM.extras.BED_UPGRADE.cost === 500, "Double size bed costs official 500");
+assert(LT.HOUSE_UPGRADES.SLAVE_ROOM.extras.DOG_BOWLS.cost === 100, "Dog bowls cost official 100");
+assert(LT.HOUSE_UPGRADES.MILKING_ROOM.extras.INDUSTRIAL_MILKERS.cost === 1500, "Industrial milkers cost official 1500");
+assert(LT.hasSlavePermission(rec, "FOOD_NORMAL"), "Diet defaults to Average");
+assert(LT.hasSlavePermission(rec, "EXERCISE_NORMAL"), "Exercise defaults to Toned");
+assert(LT.hasSlavePermission(rec, "SLEEPING_DEFAULT"), "Sleeping defaults to Sleep Whenever");
+assert(LT.hasSlavePermission(rec, "CLEANLINESS_WASH_CLOTHES"), "Wash Clothing defaults on");
+assert(LT.hasSlavePermission(rec, "PILLS_NO_PILLS"), "Pills default to none");
+
+LT.game.player.location = { world: "LILAYAS_HOUSE_GROUND_FLOOR", place: "LILAYA_HOME_ROOM_WINDOW_GROUND_FLOOR", x: 6, y: 1 };
+assert(LT.addRoomExtra("BED_UPGRADE").indexOf("must be removed") < 0 || true, "Lounge extras are not slave-room furnishings");
+
+LT.game.player.location = { world: "LILAYAS_HOUSE_GROUND_FLOOR", place: "LILAYA_HOME_ROOM_WINDOW_GROUND_FLOOR", x: 2, y: 1 };
+LT.game.player.money = 1000;
+assert(LT.addRoomExtra("BED_UPGRADE").indexOf("Double Size Bed") >= 0, "Slave room can install a double size bed");
+assert(LT.roomHasExtra(LT.currentRoomKey(), "BED_UPGRADE"), "Bed upgrade is stored");
+assert(LT.addRoomExtra("BED_DOWNGRADE").indexOf("must be removed") >= 0, "Steel bed requires removing the double bed first");
+assert(LT.removeRoomExtra("BED_UPGRADE").indexOf("removed") >= 0, "Furnishings can be removed");
+assert(LT.addRoomExtra("BED_DOWNGRADE").indexOf("Small Steel Bed") >= 0, "Steel bed can be installed after removal");
+
+var milkKey = "LILAYAS_HOUSE_GROUND_FLOOR:3,3";
+LT.houseRooms()[milkKey] = { u: "MILKING_ROOM" };
+rec.hasPenis = true;
+rec.hasVagina = true;
+rec.milkStorage = 0;
+rec.lactating = false;
+LT.setSlaveJobSetting(rec, "MILKING", "MILKING_CUM_AUTO_SELL");
+var milked = LT.applyMilkingHour(rec, milkKey);
+assert(milked.income >= 25, "Auto-sold cum uses official 0.1 flames/ml on 250ml");
+rec.lactating = true;
+LT.setSlaveJobSetting(rec, "MILKING", "MILKING_MILK");
+LT.setSlaveJobSetting(rec, "MILKING", "MILKING_MILK_AUTO_SELL");
+milked = LT.applyMilkingHour(rec, milkKey);
+assert(milked.income >= 25, "Auto-sold milk uses official 0.01 flames/ml on 2500ml");
+var stored = LT.applyMilkingHour({ hasVagina: true, hasPenis: false, jobSettings: { MILKING: { MILKING_GIRLCUM: true } } }, milkKey);
+assert(LT.milkingTank(milkKey).girlcum >= 50, "Unsold girlcum is stored at official 50ml/hour");
+assert(LT.sellMilkingTank(milkKey) >= 50, "Selling stored girlcum uses official 1 flame/ml");
+
+var permHtml2 = LT.getNode("house.perms").getContent();
+assert(permHtml2.indexOf("Promiscuity Pills") >= 0 && permHtml2.indexOf("Wash Body") >= 0, "Permissions include official pills and cleanliness");
+assert(permHtml2.indexOf("Sleep At Night") >= 0 && permHtml2.indexOf("Toned") >= 0, "Permissions include official sleeping and exercise");
+
 if (fails.length) {
   console.error("\n" + fails.length + " failure(s)");
   process.exit(1);

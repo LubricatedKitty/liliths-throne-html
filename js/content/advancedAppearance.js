@@ -154,7 +154,8 @@
       pills("Breast Shape", "The shape of your breasts.", LT.BREAST_SHAPE, p.breastShape.id, "BSHAPE_") +
       pills("Nipple Size", "How large your nipples are.", LT.SIZE5, p.nippleSize.id, "NIP_") +
       pills("Areolae Size", "How large your areolae are.", LT.SIZE5, p.areolaeSize.id, "ARE_") +
-      toggle("Puffy Nipples", "Whether your nipples are puffy.", "NIPPUFF", p.nipplesPuffy, "Puffy", "Natural")
+      toggle("Puffy Nipples", "Whether your nipples are puffy.", "NIPPUFF", p.nipplesPuffy, "Puffy", "Natural") +
+      pills("Lactation", "How much milk your breasts produce.", LT.LACTATION, (p.body && p.body.breast && (p.body.breast.lactation || "ZERO_NONE")) || "ZERO_NONE", "LACT_")
     );
   }
 
@@ -174,7 +175,8 @@
       return (
         note() +
         stepper("Penis Length", "PENIS", p.penisLength + " cm", p.penisLength <= 5, p.penisLength >= 40) +
-        pills("Testicle Size", "How large your testicles are.", LT.SIZE5, p.testicleSize.id, "BALLS_")
+        pills("Testicle Size", "How large your testicles are.", LT.SIZE5, p.testicleSize.id, "BALLS_") +
+        pills("Cum production", "How much cum you produce.", LT.CUM_PRODUCTION, (p.body && p.body.penis && p.body.penis.testicle && (p.body.penis.testicle.cumProduction || "THREE_AVERAGE")) || "THREE_AVERAGE", "CUM_")
       );
     }
     return (
@@ -376,6 +378,11 @@
     else if (act.indexOf("CAP_") === 0) p.vaginaCapacity = LT.findById(LT.SIZE5, act.slice(4));
     else if (act.indexOf("LABIA_") === 0) p.labiaSize = LT.findById(LT.SIZE5, act.slice(6));
     else if (act.indexOf("CLIT_") === 0) p.clitorisSize = LT.findById(LT.SIZE5, act.slice(5));
+    else if (act.indexOf("LACT_") === 0) {
+      if (p.body && p.body.breast) p.body.breast.lactation = act.slice(5);
+    } else if (act.indexOf("CUM_") === 0) {
+      if (p.body && p.body.penis && p.body.penis.testicle) p.body.penis.testicle.cumProduction = act.slice(4);
+    }
     else if (act.indexOf("MAKEUP_") === 0) {
       ensureAppearanceExtras(p);
       var rest = act.slice(7);
@@ -425,6 +432,7 @@
       if (!p.body.coverings) p.body.coverings = {};
       p.body.coverings.BODY_HAIR = { type: "HUMAN", primary: act.slice(9), secondary: act.slice(9), pattern: "NONE", modifier: "SMOOTH" };
     } else return;
+    if (typeof LT.syncBodyFromCharacter === "function") LT.syncBodyFromCharacter(p);
     if (typeof LT.syncCharacterFromBody === "function") LT.syncCharacterFromBody(p);
     LT.game.setContent(LT.game.currentNode);
   }

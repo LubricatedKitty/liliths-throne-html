@@ -6,9 +6,75 @@
     E: { dx: 1, dy: 0 },
   };
 
+  function tileKey(x, y) {
+    return String(x) + "," + String(y);
+  }
+
+  function discoveredBag() {
+    if (!LT.game) return {};
+    LT.game.discoveredTiles = LT.game.discoveredTiles || {};
+    return LT.game.discoveredTiles;
+  }
+
+  LT.isMapRevealed = function () {
+    if (typeof LT.isDevMode === "function" && LT.isDevMode()) return true;
+    if (typeof LT.hasProperty === "function" && LT.hasProperty("mapReveal")) return true;
+    return false;
+  };
+
+  LT.isTileDiscovered = function (world, x, y) {
+    if (LT.isMapRevealed()) return true;
+    if (world == null || x == null || y == null) return false;
+    var bag = discoveredBag();
+    var worldBag = bag[world];
+    if (!worldBag) return false;
+    return !!worldBag[tileKey(x, y)];
+  };
+
+  LT.discoverTile = function (world, x, y) {
+    if (world == null || x == null || y == null) return;
+    var bag = discoveredBag();
+    bag[world] = bag[world] || {};
+    bag[world][tileKey(x, y)] = true;
+  };
+
+  LT.discoverAround = function (world, x, y) {
+    if (world == null || x == null || y == null) return;
+    LT.discoverTile(world, x, y);
+    var dx = [0, 1, 0, -1, 1, 1, -1, -1];
+    var dy = [1, 0, -1, 0, 1, -1, 1, -1];
+    var i;
+    for (i = 0; i < dx.length; i++) LT.discoverTile(world, x + dx[i], y + dy[i]);
+  };
+
+  LT.revealWorld = function (world) {
+    if (!world || !window.allGrids || !allGrids[world]) return;
+    var data = allGrids[world];
+    var y;
+    var x;
+    if (data.length && data[0] && typeof data[0].x === "number") {
+      for (y = 0; y < data.length; y++) {
+        if (data[y]) LT.discoverTile(world, data[y].x, data[y].y);
+      }
+      return;
+    }
+    for (y = 0; y < data.length; y++) {
+      if (!data[y]) continue;
+      for (x = 0; x < data[y].length; x++) {
+        if (data[y][x]) LT.discoverTile(world, data[y][x].x != null ? data[y][x].x : x, data[y][x].y != null ? data[y][x].y : y);
+      }
+    }
+  };
+
   function roaming() {
     if (!window.grid || !grid.gridData || !LT.game || !LT.game.renderMap) return false;
-    if (LT.game.currentNode && LT.game.currentNode.travelDisabled) return false;
+    if (LT.game.currentNode && LT.game.currentNode.travelDisabled) {
+      if (typeof LT.game.currentNode.travelDisabled === "function") {
+        if (LT.game.currentNode.travelDisabled()) return false;
+      } else {
+        return false;
+      }
+    }
     if (LT.combat && LT.combat.active) return false;
     if (LT.sex && LT.sex.active) return false;
     return true;
@@ -84,6 +150,9 @@
     syncPlayerLocation();
     LT.game.discoveredWorlds = LT.game.discoveredWorlds || [];
     if (gridName && LT.game.discoveredWorlds.indexOf(gridName) < 0) LT.game.discoveredWorlds.push(gridName);
+    if (typeof LT.discoverAround === "function") {
+      LT.discoverAround(gridName, grid.playerPosition.x, grid.playerPosition.y);
+    }
     if (typeof LT.autoSave === "function") LT.autoSave();
     return getCurrentTile();
   };
@@ -112,11 +181,15 @@
   function onMove() {
     if (!LT.game) return;
     syncPlayerLocation();
+    if (typeof LT.discoverAround === "function" && window.grid) {
+      LT.discoverAround(grid.gridName, grid.playerPosition.x, grid.playerPosition.y);
+    }
     var dest = passageFor(typeof getCurrentTile === "function" ? getCurrentTile() : null);
     var node = typeof LT.getNode === "function" ? LT.getNode(dest) : null;
     var seconds = node && node.secondsPassed ? node.secondsPassed : 10;
     if (seconds > 0) LT.game.advanceTime(seconds);
     if (typeof LT.updateHouseNpcLocations === "function") LT.updateHouseNpcLocations();
+    if (typeof LT.emitWalk === "function") LT.emitWalk(typeof getCurrentTile === "function" ? getCurrentTile() : null, window.grid);
     showPlace();
   }
 

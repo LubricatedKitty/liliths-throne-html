@@ -59,6 +59,12 @@
       if (typeof LT.maybeWorkplaceSex === "function") LT.maybeWorkplaceSex();
     },
     getContent: function () {
+      var quest = LT.game.flags && LT.game.flags.quest;
+      if (quest === "MAIN_1_I_ARTHURS_TALE" || quest === "MAIN_1_J_ARTHURS_ROOM") {
+        if (typeof LT.ensureArthur === "function") LT.ensureArthur();
+        if (typeof LT.placeArthurInLab === "function") LT.placeArthurInLab();
+        return xml("LAB_ENTRY_ARTHUR_BASE") + xml("LAB_ENTRY_ARTHUR");
+      }
       var html = xml("LAB_ENTRY_BASE") + xml("LAB_ENTRY_NAUGHTY_ROSE") + xml("LAB_ENTRY_BASE_END");
       if (LT.game.flags && LT.game.flags.workSex && typeof LT.jobSexText === "function") {
         var rec = LT.findSlave(LT.game.flags.workSex);
@@ -67,13 +73,23 @@
       return html;
     },
     getResponses: function () {
+      var quest = LT.game.flags && LT.game.flags.quest;
+      if (quest === "MAIN_1_I_ARTHURS_TALE" || quest === "MAIN_1_J_ARTHURS_ROOM") {
+        return [
+          null,
+          new LT.Response(
+            "Agree",
+            "Knowing how fierce your aunt can get when she's in one of these moods, you realise that you don't really have much of a choice...",
+            "lab.arthurTale",
+          ),
+        ];
+      }
       var list = [
         new LT.Response("Leave", "Say goodbye to Lilaya and exit her lab.", "place.LILAYA_HOME_LAB", function () {
           LT.game.textStart = "<p>You tell Lilaya that you've got to get going, and, after saying goodbye, you head over to the lab's door and make your exit.</p>";
         }),
       ];
       if (typeof LT.slavePresenceResponses === "function") LT.slavePresenceResponses(list);
-      var quest = LT.game.flags && LT.game.flags.quest;
       if (quest === "MAIN_1_A_LILAYAS_TESTS") {
         list.push(new LT.Response("Tests", "Let Lilaya know that you're here to let her run her tests on you.", "lab.testing"));
       } else if (quest && quest !== "MAIN_1_A_LILAYAS_TESTS") {
@@ -274,7 +290,7 @@
           partner: lilayaPartner(),
           playerDom: true,
           consensual: true,
-          positionName: "Sitting",
+          manager: "lilaya_lab",
           startText: xml("AUNT_HOME_LABORATORY_TESTING_HORNY_LILAYA_WANTS_SEX_START"),
           postSexNode: "lab.endSex",
           onEnd: function () {
@@ -311,7 +327,7 @@
           partner: lilayaPartner(),
           playerDom: true,
           consensual: true,
-          positionName: "Sitting",
+          manager: "lilaya_lab",
           startText: xml("AUNT_HOME_LABORATORY_TESTING_MORE_SEX_START"),
           postSexNode: "lab.endSex",
           onEnd: function () {
@@ -536,6 +552,82 @@
     },
     getResponses: function () {
       return LT.getNode("lab.entry").getResponses(LT.game, 0);
+    },
+  });
+
+  function arthurXml(tag) {
+    return LT.parseFromXML("places/dominion/lilayasHome/arthursRoom", tag);
+  }
+
+  LT.defineNode({
+    id: "lab.arthurTale",
+    ui: "dialogue",
+    title: "Lilaya's Laboratory",
+    secondsPassed: 1800,
+    travelDisabled: true,
+    continuesDialogue: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("LAB_ARTHURS_TALE");
+    },
+    getResponses: function () {
+      return [
+        null,
+        new LT.Response(
+          "Clear storeroom",
+          "Head on over to the lab's storeroom and help Rose clear it out so that Arthur can use it as a bedroom.",
+          "lab.arthurInstall",
+          function () {
+            if (typeof LT.installArthurRoom === "function") LT.installArthurRoom();
+          },
+        ),
+      ];
+    },
+  });
+
+  LT.defineNode({
+    id: "lab.arthurInstall",
+    ui: "dialogue",
+    title: "Arthur's Room",
+    secondsPassed: 1800,
+    travelDisabled: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return arthurXml("ROOM_ARTHUR_INSTALLATION");
+    },
+    getResponses: function () {
+      return [
+        null,
+        new LT.Response(
+          "Find Lyssieth",
+          "If you ever want to find out what's going on, it looks like you'll have to agree to help.",
+          "lab.arthurLyssieth",
+          function () {
+            if (typeof LT.advanceMainQuest === "function") {
+              LT.game.textEnd = LT.advanceMainQuest("MAIN_2_A_INTO_THE_DEPTHS");
+            }
+          },
+        ),
+      ];
+    },
+  });
+
+  LT.defineNode({
+    id: "lab.arthurLyssieth",
+    ui: "dialogue",
+    title: "Arthur's Room",
+    secondsPassed: 30,
+    travelDisabled: true,
+    continuesDialogue: true,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return arthurXml("ROOM_ARTHUR_INSTALLATION_AGREE_TO_CONVINCE_LYSSIETH");
+    },
+    getResponses: function () {
+      return [
+        null,
+        new LT.Response("Continue", "Allow Arthur to get on with his experiments.", "place.LILAYA_HOME_ARTHUR_ROOM"),
+      ];
     },
   });
 })();

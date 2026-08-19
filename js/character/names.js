@@ -120,11 +120,33 @@
     return list[Math.floor(Math.random() * list.length)];
   }
 
+  var DEMON_PREFIX_FEM = ["Aella", "Bella", "Cae", "Deva", "Ella", "Fae", "Hela", "Isa", "Katha", "Loe", "Nysa", "Oella", "Rae", "Sytha", "Vixxa", "Wynna"];
+  var DEMON_PREFIX_MAS = ["Ada", "Boro", "Foro", "Helio", "Kiri", "Zara"];
+  var DEMON_POSTFIX = ["jyx", "ryth", "ney", "nix", "sys", "trix"];
+
   LT.randomHumanNameTriplet = function () {
     return pick(LT.HUMAN_NAME_TRIPLETS).slice();
   };
 
   LT.randomHumanSurname = function () {
     return pick(LT.HUMAN_SURNAMES);
+  };
+
+  LT.randomDemonName = function (feminine) {
+    if (feminine) return pick(DEMON_PREFIX_FEM) + pick(DEMON_POSTFIX);
+    return pick(DEMON_PREFIX_MAS) + pick(DEMON_POSTFIX);
+  };
+
+  LT.randomOfficialName = function (opts) {
+    opts = opts || {};
+    var feminine = !!opts.feminine;
+    if (opts.demon) {
+      return { name: LT.randomDemonName(feminine), surname: LT.randomHumanSurname() };
+    }
+    var trip = LT.randomHumanNameTriplet();
+    return {
+      name: feminine ? trip[2] : trip[0],
+      surname: LT.randomHumanSurname(),
+    };
   };
 })();

@@ -630,18 +630,26 @@
     });
     LT.refreshConditionalStatusEffects(ch);
     if (typeof LT.refreshVitals === "function") LT.refreshVitals(ch);
+    /* Official HEALTH/MANA regeneration is a tiny fraction of maximum per hour. Sleep is the main refill. */
+    if (seconds > 0) {
+      var hours = seconds / 3600;
+      if (typeof LT.incrementHealth === "function") LT.incrementHealth(ch, (ch.maxHealth || 0) * 0.01 * hours);
+      if (typeof LT.incrementMana === "function") LT.incrementMana(ch, (ch.maxMana || 0) * 0.01 * hours);
+    }
   };
 
   LT.applySleepEffect = function (ch, additionalMinutes) {
     if (!ch) return;
     additionalMinutes = additionalMinutes || 0;
-    if (typeof LT.refreshVitals === "function") LT.refreshVitals(ch, true);
-    ch.lust = LT.getRestingLust(ch);
+    ch.lust = typeof LT.getRestingLust === "function" ? LT.getRestingLust(ch) : 0;
     LT.removeStatusEffect(ch, "WELL_RESTED");
     LT.removeStatusEffect(ch, "WELL_RESTED_BOOSTED");
     LT.removeStatusEffect(ch, "WELL_RESTED_BOOSTED_EXTRA");
     var seconds = 10 * 60 * 60 + additionalMinutes * 60;
     LT.addStatusEffect(ch, "WELL_RESTED", { secondsRemaining: seconds });
+    if (typeof LT.refreshVitals === "function") LT.refreshVitals(ch, true);
+    ch.health = ch.maxHealth;
+    ch.mana = ch.maxMana;
   };
 
   LT.applySexEndStatusEffects = function (ch, orgasmed) {
@@ -697,14 +705,14 @@
     return lines.filter(Boolean).join("<br/>");
   };
 
-  LT.paintStatusEffects = function (ch) {
-    var root = document.getElementById("status-effects");
+  LT.paintStatusEffects = function (ch, rootId) {
+    var root = document.getElementById(rootId || "status-effects");
     if (!root) return;
     ch = ch || (LT.game && LT.game.player);
     if (ch) LT.refreshConditionalStatusEffects(ch);
     var list = LT.listStatusEffects(ch);
     if (!list.length) {
-      root.innerHTML = '<p class="muted" style="text-align:center;margin:0;padding:8px;">No status effects</p>';
+      root.innerHTML = rootId && String(rootId).indexOf("status-effects-") === 0 ? "" : '<p class="muted" style="text-align:center;margin:0;padding:8px;">No status effects</p>';
       return;
     }
     var html = '<div class="status-effect-row">';

@@ -9,3 +9,7 @@ LT.fontUrl = function (name) {
 LT.mapAsset = function (rel) {
   return "assets/map/" + rel;
 };
+
+LT.charAsset = function (rel) {
+  return "assets/characters/" + rel;
+};

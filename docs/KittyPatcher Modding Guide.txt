@@ -1,0 +1,378 @@
+KittyPatcher Modding Guide
+==========================
+For this HTML rebuild of Lilith's Throne.
+
+Tools
+-----
+- KittyPatcher CC v0.1.6.py
+    The patcher. Double-click it (or run it from KittyLoader) and it applies
+    every enabled .mod file to the live game files.
+
+- KittyLoader.py
+    The manager. Lists mods, lets you turn them on/off, set load order
+    (priority), keep profiles, edit .mod files, and apply / restore.
+
+- mods/
+    Put your .mod files here. KittyLoader and KittyPatcher both scan
+    subfolders. logs/, backup/, and cache/ inside mods/ are ignored
+    as sources. Two .mod files with the same filename collide; the
+    later walk hit wins.
+
+- mods/kittyloader.json
+    KittyLoader's state: which profile is active, which mods are enabled,
+    and the apply order.
+
+- mods/logs/
+    MainPatchLog.txt, ModPatchLog.txt, FailsPatchLog.txt.
+
+- mods/logs/backup/
+    First-run copies of every file a mod touches. Apply always restores
+    those backups first, then re-applies every enabled mod. That means
+    the live game files stay vanilla until you apply.
+
+What a mod is
+-------------
+A KittyPatcher mod is a .mod text file. It is NOT JavaScript by itself.
+It is a list of patch operations that rewrite or append files in the
+game folder.
+
+The game itself is vanilla HTML / CSS / JS. After you apply, those files
+have your changes in them. Reload the browser (or let KittyLoader launch
+it) to play the patched game.
+
+File layout of a .mod
+---------------------
+A typical mod looks like this:
+
+    # Lines starting with # are comments and are ignored.
+    Name: Example Mod
+    Author: You
+    Description: Adds a test item and loads my JS file.
+    Category: Items
+    Version: 1.0.0
+    Game Version: 0.38.0
+    Depends On: OtherMod.mod
+
+    Add Boot:
+    "mods/exampleMod/exampleMod.js"
+
+    Add Javascript [mods/exampleMod/exampleMod.js]:
+    (function () {
+      // your whole mod lives here
+    })();
+
+Metadata (Name, Author, Description, Category, Version, Game Version,
+Depends On) is read by KittyLoader for the list. Patching ignores it.
+Metadata must sit ABOVE the first Replace / Add Boot / Add Javascript /
+Add Content / ~~ block.
+
+Depends On
+----------
+List other mods this one needs. Comma-separated. You can use the other
+.mod filename, the filename without .mod, or its Name: line.
+
+    Depends On: KittyPetsAndAnimals.mod
+    Depends On: "Pets and Animals", OtherMod.mod
+
+Aliases: Depends: and Dependencies: do the same thing. Multiple Depends
+On lines add together.
+
+In KittyLoader the row turns red if a required mod is missing or not
+enabled. Enabling the dependent pops a warning (Yes enables the
+required mods too). Apply warns if anything is still missing, and
+still puts required mods first in the boot order so their JS loads
+before yours.
+
+Comments
+--------
+- A line whose first non-space character is # is dropped.
+- A # later on a line is also a comment, UNLESS it is inside quotes.
+  So   soldBy: ["ralph"]   is fine.
+  And  value: 150  # Ralph sells this   is fine; the # part is stripped.
+
+Do not put unquoted # inside JavaScript you are patching in, unless you
+mean it as a comment. Official UtilText uses #IF / #THEN / #ENDIF. Those
+are fine inside quoted strings.
+
+The four operations
+-------------------
+1) Add Boot:
+   Inserts script paths into the official load list in js/boot.js,
+   after whatever is already there (usually after "js/main.js", or
+   after scripts earlier mods already added). Paths already in the
+   list are skipped. This is the normal way to hook a mod JS file.
+
+        Add Boot:
+        "mods/myMod/myMod.js"
+        "mods/myMod/extra.js"
+
+   Quotes are optional. One path per line. Do not use .. or absolute
+   paths. Optional: Add Boot [js/boot.js]: if you ever need to name
+   the file; the default is js/boot.js.
+
+   Two mods can both Add Boot. Later mods append after earlier ones.
+   They do not steal each other's "js/main.js" line.
+
+2) Replace [path]:
+   Finds an exact block of text in that file and swaps it for the With:
+   block.
+
+        Replace [js/items/items.js]:
+        innoxia_bdsm_metal_collar: {
+        With:
+        my_mod_tea: { id: "my_mod_tea", name: "tea", value: 12, soldBy: ["ralph"] },
+        innoxia_bdsm_metal_collar: {
+
+   Bare Replace:  (no [path]) targets index.html.
+
+3) Add Javascript [path]:
+   Appends the following block to the end of that file. If the file does
+   not exist, KittyPatcher creates it (and its folders).
+
+        Add Javascript [mods/myMod/myMod.js]:
+        (function () {
+          LT.ITEMS.my_tea = { id: "my_tea", name: "tea", value: 10, soldBy: ["ralph"] };
+        })();
+
+   Use this to CREATE your mod JS file. You do not have to keep a
+   separate .js on disk if you do not want to; the .mod can write it.
+
+4) Add Content [path]:
+   Same as Add Javascript: appends the following block. Use it for CSS,
+   HTML snippets, JSON, or anything that is not JS. The command name is
+   only a label in the logs.
+
+        Add Content [css/theme.css]:
+        .my-mod-banner { color: #ff8cb3; }
+
+With: is required for Replace. It is not used for Add Javascript / Add
+Content; everything after those headers until the next header is the
+appended body.
+
+Matching rules for Replace
+--------------------------
+- The old block is matched after comments are stripped from the .mod.
+- Newlines in the old block are treated as flexible whitespace, so a
+  wrapped line in the game file can still match.
+- The match is otherwise exact. Copy the live file text, do not retype
+  it from memory.
+- If the old block is not found, that op is logged in FailsPatchLog.txt
+  and skipped. Other ops still run.
+- If two mods Replace the same old text, the later mod in KittyLoader's
+  priority list wins (last write). KittyPatcher also warns when the same
+  old line appears in more than one .mod.
+
+[to] in a Replace old-block is a wildcard for "whatever is currently
+between this prefix and this suffix". Use it sparingly. Prefer unique
+old text.
+
+Legacy ~~ / ~ delimiters still work (~~ old ~ new). New mods should use
+Replace: / With:.
+
+What you cannot patch
+---------------------
+- Paths outside the game folder.
+- Paths with ..
+- Absolute paths.
+- Anything whose name contains KittyPatcher.
+
+Stay inside the project.
+
+KittyLoader workflow
+--------------------
+1. Drop your .mod (and any extra files it expects) into mods/.
+2. Open KittyLoader.
+3. Enable the mod. Drag priority so dependencies apply first.
+4. Apply. KittyLoader restores backups, then patches enabled mods in
+   priority order.
+5. Play. Reload the HTML if a browser window is already open.
+   Main menu: Mod Menu is settings pages from LT.registerModMenu /
+   LT.injectModMenuHtml. Mod List is KittyLoader apply order, from
+   mods/kittyloader.json, or mods/appliedMods.js if that fetch fails.
+6. To go back to vanilla: disable the mods and Apply, or use Restore.
+
+Priority is the load / apply order. Lower number in the list is applied
+first. Put "engine hook" mods before content mods that need those hooks.
+
+Double-clicking KittyPatcher CC v0.1.6.py with no KittyLoader applies
+EVERY .mod it finds, sorted by filename. Prefer KittyLoader so you can
+choose and order them.
+
+The philosophy
+--------------
+Beginner:
+    You may Replace / With just about anything. Copy a function from the
+    game, change it, paste it back. That is a valid way to learn. It is
+    also the fastest way to make two mods fight each other.
+
+As you get better:
+    Use Add Boot to hook your file into the load order.
+    After that, write as much as possible as your own JavaScript. Talk
+    to the public LT.* APIs. Register new nodes, items, NPCs, grids.
+
+    Only Replace a core file again when you truly cannot hook it: a
+    function that does not exist yet, a list that is not an array you
+    can push to, or a hardcoded check you must open.
+
+Why this matters:
+    - Your .js can be read, tested, and shared without re-applying.
+    - Two mods can both Add Javascript without overwriting each other.
+    - Updating the game is less likely to break a hook than a 200-line
+      function replace.
+    - Failed Replace ops leave the game half-patched. A load-order hook
+      plus a self-contained JS file either loads or it does not.
+
+Beginner pattern (fine while learning)
+--------------------------------------
+    Replace [js/items/items.js]:
+    innoxia_bdsm_metal_collar: {
+    With:
+    my_mod_tea: {
+      id: "my_mod_tea",
+      kind: "food",
+      name: "sweet tea",
+      value: 12,
+      soldBy: ["ralph"],
+      description: "A cup of sweet tea.",
+    },
+    innoxia_bdsm_metal_collar: {
+
+This works. It also means any other mod that Replaces near
+innoxia_bdsm_metal_collar will collide with you.
+
+Advanced pattern (preferred)
+----------------------------
+    Add Boot:
+    "mods/sweetTea/sweetTea.js"
+
+    Add Javascript [mods/sweetTea/sweetTea.js]:
+    (function () {
+      if (!window.LT || !LT.ITEMS) {
+        console.error("sweetTea: LT.ITEMS is not ready");
+        return;
+      }
+      LT.ITEMS.my_mod_tea = {
+        id: "my_mod_tea",
+        kind: "food",
+        name: "sweet tea",
+        value: 12,
+        soldBy: ["ralph"],
+        description: "A cup of sweet tea.",
+      };
+    })();
+
+boot.js is the only core file you touched. The item lives in your JS.
+Ralph's shop already sells anything with soldBy: ["ralph"], so you did
+not need to edit the shop.
+
+When you DO need Replace on core code
+-------------------------------------
+Examples of legitimate core replaces:
+
+- js/boot.js via Add Boot, to insert your script path. (Always do this
+  one. Do not Replace the "js/main.js" line.)
+- A function that has no hook and no array to push into.
+- A hardcoded "if (place === X) return;" that must also accept your
+  place.
+- CSS you cannot add any other way (rare; Add Content on theme.css is
+  usually enough).
+
+When you do it, keep the old block as small as possible. Replace five
+lines, not a whole file.
+
+Recommended folder for a serious mod
+------------------------------------
+    mods/myMod/
+        myMod.mod          (or mods/myMod.mod at the top of mods/)
+        myMod.js
+        text.js            (optional extra scripts, also listed in boot)
+        css extras via Add Content
+        images/            (your art; keep it inside the game folder)
+
+KittyPatcher finds .mod files in subfolders. The JS paths you insert
+into boot.js are relative to the game root, same as the official
+"js/main.js" entries.
+
+Applying, testing, failing
+--------------------------
+After Apply, open mods/logs/ModPatchLog.txt.
+
+    [js/boot.js] Replacing '...' with '...'     success
+    [js/boot.js] No match found for '...'       your old block is stale
+
+If a Replace fails, the game file was not changed for that op. Update
+the old block from the current file and Apply again.
+
+If the game throws "Unknown dialogue node" after your hook, your JS
+loaded but a node id is wrong. If nothing happens at all, boot.js did
+not get your path, or your JS ran before LT existed.
+
+Always wrap your JS in (function () { ... })(); so you do not leak
+globals. Put new state on LT.game.flags or LT.myMod = {}.
+
+Load order of the game
+----------------------
+js/boot.js loads every official script in order, ending with js/main.js.
+Your hook should go AFTER "js/main.js" so LT, nodes, items, maps, and
+the game object already exist.
+
+If your mod must run earlier (for example it replaces a function that
+another official file will call at load), insert it just after the file
+you depend on, not at the end.
+
+    Replace [js/boot.js]:
+    "js/items/items.js",
+    With:
+    "js/items/items.js",
+    "mods/myMod/myItemsEarly.js",
+
+Only do that if you have to.
+
+Conflicts
+---------
+Two mods both replacing "js/main.js", in boot.js will work if they each
+keep the previous line and add their own. Apply order matters:
+
+    Mod A:  "js/main.js",  ->  "js/main.js", "mods/a/a.js",
+    Mod B:  "js/main.js",  ->  "js/main.js", "mods/b/b.js",
+
+If B applies last and still matches the vanilla "js/main.js", line, A's
+hook is gone. Safer old-block after you know A is present:
+
+    Replace [js/boot.js]:
+    "mods/a/a.js",
+    With:
+    "mods/a/a.js",
+    "mods/b/b.js",
+
+Or have each mod Add Javascript its own file, and use one tiny "loader"
+mod that only edits boot.js and lists every script. For public mods,
+document "apply after X" in the Description.
+
+Sharing a mod
+-------------
+Ship the .mod plus any images it needs. If the .mod uses Add Javascript
+to write the .js, the player only needs the .mod. If you keep a real
+.js on disk and only hook boot.js, ship both.
+
+Tell players: put it in mods/, enable it in KittyLoader, Apply, reload.
+
+Do not ship a patched index.html or a patched js/ folder. That is not
+a KittyPatcher mod. That is a fork.
+
+Live examples
+-------------
+mods/examples/ and mods/sweetTea/ are working copies of the recipes
+in docs/LT Modding Guide.txt. Enable Example Mods Hub first, Apply,
+reload, then open Phone > Example Mods. See mods/examples/README.txt.
+
+Quick checklist
+---------------
+[ ] Metadata at the top of the .mod
+[ ] One Add Boot block to add your script (advanced)
+    OR small, targeted Replaces while you learn (beginner)
+[ ] Your logic in JS, talking to LT.*
+[ ] Flags on LT.game.flags, not random globals
+[ ] Apply, read FailsPatchLog.txt, fix misses
+[ ] Reload the game
+[ ] Disable + Apply (or Restore) to confirm you can go back to vanilla

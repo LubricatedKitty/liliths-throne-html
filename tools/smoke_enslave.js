@@ -43,6 +43,8 @@ function load(rel) {
   "js/character/npcs.js",
   "js/items/items.js",
   "js/character/slavery.js",
+  "js/engine/properties.js",
+  "js/engine/preferences.js",
   "js/engine/game.js",
   "js/sex/sex.js",
   "js/content/sexNodes.js",

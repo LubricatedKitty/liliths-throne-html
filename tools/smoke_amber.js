@@ -55,6 +55,7 @@ function load(rel) {
   "js/content/world.js",
   "js/content/demonHome.js",
   "js/content/zaranix.js",
+  "js/content/zaranixInterior.js",
 ].forEach(load);
 
 var LT = context.LT;
@@ -67,6 +68,9 @@ LT.generateZaranixTile();
 LT.ensureAmber();
 LT.ensureKatherine();
 
+LT.enterWorld = function (grid, place) {
+  if (LT.game.player) LT.game.player.location = { world: grid, place: place };
+};
 var street = LT.getNode("place.DOMINION_DEMON_HOME_ZARANIX").getResponses(LT.game, 0);
 var home = street.filter(function (r) { return r && r.title === "Zaranix's Home"; })[0];
 assert(home && home.nextDialogue === "zaranix.outside", "Street offers Zaranix's Home");
@@ -82,7 +86,10 @@ var knock = outR.filter(function (r) { return r && r.title === "Knock door" && !
 var climb = outR.filter(function (r) { return r && r.title === "Climb fence"; })[0];
 var kick = outR.filter(function (r) { return r && r.title === "Kick down door" && !r.disabled; })[0];
 assert(knock && knock.nextDialogue === "zaranix.knock", "Daytime knock is available");
-assert(climb && climb.disabled, "Climb fence is stubbed");
+assert(climb && !climb.disabled && climb.nextDialogue === "place.ZARANIX_GF_GARDEN_ENTRY", "Climb fence enters the garden");
+LT.game.player.physique = 35;
+outR = LT.getNode("zaranix.outside").getResponses(LT.game, 0);
+kick = outR.filter(function (r) { return r && r.title === "Kick down door" && !r.disabled; })[0];
 assert(kick && kick.nextDialogue === "zaranix.kick", "Kick down door is the combat entrance");
 
 knock.effects();
@@ -120,9 +127,12 @@ assert(LT.combat.escapeChance === 0, "Amber fight cannot be escaped");
 
 LT.combat.finished = "victory";
 var winR = LT.getNode("zaranix.amberVictory").getResponses(LT.game, 0);
-assert(winR[1] && winR[1].title === "Continue", "Victory Continue is available");
-assert(winR[2] && winR[2].title === "Use Amber" && winR[2].nextDialogue === "sex.scene", "Use Amber starts the sex kernel");
-assert(winR[3] && winR[3].title === "Submit" && winR[3].nextDialogue === "sex.scene", "Submit starts the sex kernel");
+var winContinue = winR.filter(function (r) { return r && r.title === "Continue"; })[0];
+var useAmber = winR.filter(function (r) { return r && r.title === "Use Amber"; })[0];
+var submitAmber = winR.filter(function (r) { return r && r.title === "Submit"; })[0];
+assert(winContinue && winContinue.nextDialogue === "place.ZARANIX_GF_ENTRANCE", "Victory Continue enters the house");
+assert(useAmber && useAmber.nextDialogue === "sex.scene", "Use Amber starts the sex kernel");
+assert(submitAmber && submitAmber.nextDialogue === "sex.scene", "Submit starts the sex kernel");
 var loseR = LT.getNode("zaranix.amberDefeat").getResponses(LT.game, 0);
 assert(loseR[1] && loseR[1].title === "Used" && loseR[1].nextDialogue === "sex.scene", "Defeat Used starts the sex kernel");
 

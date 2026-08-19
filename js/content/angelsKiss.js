@@ -108,7 +108,12 @@
     chrome: { left: true, right: true },
     applyPreParsingEffects: function () {
       LT.game.flags = LT.game.flags || {};
-      if (typeof LT.ensureAngel === "function") LT.ensureAngel();
+      if (typeof LT.ensureAngel === "function") {
+        var angel = LT.ensureAngel();
+        var loc = LT.game.player && LT.game.player.location;
+        if (angel && loc) angel.location = { world: loc.world, place: loc.place };
+      }
+      if (typeof LT.markCharacterEncountered === "function") LT.markCharacterEncountered("angel");
     },
     getContent: function () {
       return xml(officeTag());
@@ -146,6 +151,7 @@
   LT.BUNNY_SEX_COST = 1500;
   LT.LOPPY_SEX_COST = 2000;
   LT.LOPPY_SUB_COST = 2500;
+  LT.BUNNY_LOPPY_THREESOME_COST = 5000;
   LT.WHORE_PAY = 2000;
 
   function makeClient() {
@@ -205,6 +211,51 @@
     return r;
   }
 
+  function threesomeStartText(fromBunny) {
+    if (fromBunny) {
+      return (
+        xml("BEDROOM_BUNNY_THREESOME") +
+        xml(LT.game.flags && LT.game.flags.loppyIntroduced ? "BEDROOM_BUNNY_THREESOME_LOPPY_INTRODUCED" : "BEDROOM_BUNNY_THREESOME_LOPPY_NOT_INTRODUCED")
+      );
+    }
+    return (
+      xml("BEDROOM_LOPPY_THREESOME") +
+      xml(LT.game.flags && LT.game.flags.bunnyIntroduced ? "BEDROOM_LOPPY_THREESOME_BUNNY_INTRODUCED" : "BEDROOM_LOPPY_THREESOME_BUNNY_NOT_INTRODUCED")
+    );
+  }
+
+  function payThreesome(fromBunny) {
+    var cost = LT.BUNNY_LOPPY_THREESOME_COST;
+    var bunny = typeof LT.ensureBunny === "function" ? LT.ensureBunny() : LT.game.npcs.bunny;
+    var loppy = typeof LT.ensureLoppy === "function" ? LT.ensureLoppy() : LT.game.npcs.loppy;
+    if (LT.getMoney() < cost) {
+      return new LT.Response(
+        "Threesome (" + cost + ")",
+        "You don't have " + cost + " flames, so you can't afford to have sex with both Bunny and Loppy at the same time.",
+        null,
+      ).disable("You need " + cost + " flames.");
+    }
+    var primary = fromBunny ? bunny : loppy;
+    var extra = fromBunny ? loppy : bunny;
+    var r = LT.ResponseSex("Threesome (" + cost + ")", "Pay " + cost + " flames to have sex with both Bunny and Loppy at the same time.", {
+      partner: primary,
+      partners: [extra],
+      manager: "bunny_loppy",
+      playerDom: true,
+      consensual: true,
+      startText: threesomeStartText(fromBunny),
+      postSexNode: fromBunny ? "bunny.afterThreesome" : "loppy.afterThreesome",
+    });
+    var orig = r.effects;
+    r.effects = function () {
+      LT.incrementMoney(-cost);
+      LT.game.flags.bunnyIntroduced = true;
+      LT.game.flags.loppyIntroduced = true;
+      if (orig) orig();
+    };
+    return r;
+  }
+
   LT.defineNode({
     id: "place.ANGELS_KISS_BEDROOM_BUNNY",
     ui: "dialogue",
@@ -247,6 +298,13 @@
         if (orig) orig();
       };
       list.push(sex);
+      list.push(payThreesome(true));
+      list.push(
+        new LT.Response("Decline", "You're not really interested in paying for sex with Bunny right now...", "place.ANGELS_KISS_CORRIDOR", function () {
+          LT.game.flags.bunnyIntroduced = true;
+          LT.game.textStart = xml("BEDROOM_BUNNY_DECLINE");
+        }),
+      );
       return list;
     },
   });
@@ -261,6 +319,20 @@
       var bunny = LT.game.npcs && LT.game.npcs.bunny;
       var orgasmed = bunny && bunny.orgasmedThisSex;
       return xml(orgasmed ? "AFTER_SEX_BUNNY" : "AFTER_SEX_BUNNY_NO_ORGASM");
+    },
+    getResponses: function () {
+      return [new LT.Response("Leave", "Leave Bunny's room.", "place.ANGELS_KISS_BEDROOM_BUNNY")];
+    },
+  });
+
+  LT.defineNode({
+    id: "bunny.afterThreesome",
+    ui: "dialogue",
+    title: "Finished",
+    secondsPassed: 300,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("AFTER_SEX_BUNNY_THREESOME");
     },
     getResponses: function () {
       return [new LT.Response("Leave", "Leave Bunny's room.", "place.ANGELS_KISS_BEDROOM_BUNNY")];
@@ -315,6 +387,13 @@
       var sub = wrap(LT.LOPPY_SUB_COST, "BEDROOM_LOPPY_SEX_SUBMISSIVE", false);
       sub.title = "Submissive Sex (" + LT.LOPPY_SUB_COST + ")";
       list.push(sub);
+      list.push(payThreesome(false));
+      list.push(
+        new LT.Response("Decline", "You're not really interested in paying for sex with Loppy right now...", "place.ANGELS_KISS_CORRIDOR", function () {
+          LT.game.flags.loppyIntroduced = true;
+          LT.game.textStart = xml("BEDROOM_LOPPY_DECLINE");
+        }),
+      );
       return list;
     },
   });
@@ -329,6 +408,20 @@
       var loppy = LT.game.npcs && LT.game.npcs.loppy;
       var orgasmed = loppy && loppy.orgasmedThisSex;
       return xml(orgasmed ? "BEDROOM_LOPPY_AFTER_SEX" : "BEDROOM_LOPPY_AFTER_SEX_NO_ORGASM");
+    },
+    getResponses: function () {
+      return [new LT.Response("Leave", "Leave Loppy's room.", "place.ANGELS_KISS_BEDROOM_LOPPY")];
+    },
+  });
+
+  LT.defineNode({
+    id: "loppy.afterThreesome",
+    ui: "dialogue",
+    title: "Finished",
+    secondsPassed: 300,
+    chrome: { left: true, right: true },
+    getContent: function () {
+      return xml("BEDROOM_LOPPY_AFTER_THREESOME");
     },
     getResponses: function () {
       return [new LT.Response("Leave", "Leave Loppy's room.", "place.ANGELS_KISS_BEDROOM_LOPPY")];

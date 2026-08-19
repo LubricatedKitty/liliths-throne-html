@@ -1,4 +1,17 @@
 (function () {
+  var SEX_TAB_VISUAL = [3, 0, 1, 2];
+  var SEX_TAB_INTERNAL = { 0: 1, 1: 2, 2: 3, 3: 0 };
+
+  LT.sexTabInternal = function (visual) {
+    if (visual == null) return 0;
+    return SEX_TAB_VISUAL[visual] != null ? SEX_TAB_VISUAL[visual] : visual;
+  };
+
+  LT.sexTabVisual = function (internal) {
+    if (internal == null) return 1;
+    return SEX_TAB_INTERNAL[internal] != null ? SEX_TAB_INTERNAL[internal] : 1;
+  };
+
   function slot(index, response) {
     if (response) response._index = index;
     return response;
@@ -19,25 +32,57 @@
     title: function () {
       var s = LT.sex;
       if (!s || !s.active) return "Sex";
-      return (s.consensual ? "" : "Non-consensual ") + "Sex: " + (s.positionName || "Standing");
+      return (s.publicSex ? "Public " : "") + (s.consensual ? "" : "Non-consensual ") + "Sex: " + (s.positionName || "Standing");
     },
-    secondsPassed: 0,
+    secondsPassed: function () {
+      if (LT.sex && LT.sex.skipSeconds) return LT.sex.skipSeconds;
+      return LT.sex && LT.sex.active ? 20 : 0;
+    },
     travelDisabled: true,
     chrome: { left: true, right: true },
-    tabs: ["Sex", "Self", "Positioning", "Misc"],
+    tabs: ["Misc", "Sex", "Self", "Positioning"],
     getContent: function () {
       var s = LT.sex;
-      if (!s || !s.player || !s.partner) return "<p>There is no sex scene here.</p>";
-      var html = "<div class='combat-status'>";
-      html += s.bar(s.player);
-      html += s.bar(s.partner);
-      html += "</div>";
-      if (s.ongoing) {
-        html += "<p class='muted'>Ongoing: " + (s.ongoing.label || s.ongoing.id) + ".</p>";
+      if (!s || !s.player || (!s.partner && !s.masturbation)) return "<p>There is no sex scene here.</p>";
+      var html = "";
+      if (typeof LT.isDevMode === "function" && LT.isDevMode()) {
+        var slotBits = [];
+        var parts = s.participants || [s.player, s.partner];
+        var si;
+        for (si = 0; si < parts.length; si++) {
+          if (!parts[si]) continue;
+          var who = parts[si] === s.player ? "you" : (parts[si].getName ? parts[si].getName() : parts[si].name);
+          var slot = typeof s.slotOf === "function" ? s.slotOf(parts[si]) : "";
+          slotBits.push(who + (slot ? " (" + slot + ")" : ""));
+        }
+        html += "<p class='muted'>Slots: " + slotBits.join(", ") + ".</p>";
+        if (typeof s.paceSummary === "function") html += "<p class='muted'>" + s.paceSummary() + "</p>";
+        if (typeof s.listOngoing === "function") {
+          var links = s.listOngoing() || [];
+          if (links.length) {
+            html +=
+              "<p class='muted'>Ongoing: " +
+              links
+                .map(function (l) {
+                  return l.id || l.label || "act";
+                })
+                .join(", ") +
+              ".</p>";
+          }
+        }
       }
-      if (s.lastResolution) {
-        html += "<div class='combat-log'><h6>" + (s.turn ? "Last actions" : "Sex") + "</h6>" + s.lastResolution + "</div>";
+      var showBars = typeof LT.hasProperty === "function" ? LT.hasProperty("sexMainStatusBars") : false;
+      if (showBars) {
+        html += "<div class='combat-status'>";
+        var parts = s.participants || [s.player, s.partner];
+        var p;
+        for (p = 0; p < parts.length; p++) {
+          if (parts[p]) html += s.bar(parts[p]);
+        }
+        html += "</div>";
       }
+      if (s.logHtml) html += "<div class='sex-log'>" + s.logHtml + "</div>";
+      else if (s.lastResolution) html += "<div class='sex-log'>" + s.lastResolution + "</div>";
       return html;
     },
     getResponses: function (game, tabIndex) {
@@ -58,9 +103,10 @@
       var i;
       for (i = 0; i < actions.length; i++) {
         (function (act, index) {
-          var title = act.name;
+          var title = typeof act.name === "function" ? act.name(s.player, s.partner) : act.name;
           if (title && title.indexOf("[") >= 0 && LT.sex.parseText) title = LT.sex.parseText(title, s.player, s.partner);
           var tip = act.tooltip ? act.tooltip(s.player, s.partner) : "";
+          if (tip && tip.indexOf("[") >= 0 && LT.sex.parseText) tip = LT.sex.parseText(tip, s.player, s.partner);
           var resp = new LT.Response(title, tip, "sex.scene", function () {
             s.responseTab = tabIndex;
             s.perform(act.id);

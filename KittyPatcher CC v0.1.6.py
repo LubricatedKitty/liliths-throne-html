@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import subprocess
@@ -11,6 +12,7 @@ from collections import defaultdict
 # Replace [relative/path.ext]: targets that file under the project folder.
 # Add Javascript [relative/path.ext]: appends the following block to that file.
 # Add Content [relative/path.ext]: appends the following block to that file.
+# Add Boot: inserts script paths into js/boot.js (after the last scripts[] entry).
 
 html_file = os.path.abspath('index.html')
 project_root = os.path.dirname(html_file)
@@ -25,7 +27,12 @@ current_file_name = os.path.basename(sys.argv[0])
 cache_dir = os.path.join(logs_folder, 'cache')
 
 OP_HEADER = re.compile(
-    r'^(?P<kind>Replace|Add Javascript|Add Content)(?:\s+\[(?P<target>.+?)\])?:\s*$'
+    r'^(?P<kind>Replace|Add Javascript|Add Content|Add Boot)(?:\s+\[(?P<target>.+?)\])?:\s*$'
+)
+
+SCRIPTS_ARRAY = re.compile(
+    r'(var\s+scripts\s*=\s*\[)(.*?)(\n[ \t]*\];)',
+    re.DOTALL,
 )
 
 
@@ -235,8 +242,14 @@ def parse_mod_chunks(mod_content):
             if current:
                 chunks.append(current)
             kind = header.group("kind")
+            if kind == "Add Boot":
+                chunk_kind = "boot"
+            elif kind in ("Add Javascript", "Add Content"):
+                chunk_kind = "append"
+            else:
+                chunk_kind = "replace"
             current = {
-                "kind": "append" if kind in ("Add Javascript", "Add Content") else "replace",
+                "kind": chunk_kind,
                 "command": kind,
                 "target": (header.group("target") or "").strip(),
                 "body": []
@@ -262,6 +275,78 @@ def add_replacement(mod_list, old_line_stripped, new_line_stripped, target_file)
         'new_line': new_line_stripped,
         'target': target_file
     })
+
+
+def parse_boot_script_lines(body):
+    """Turn an Add Boot body into script paths (quotes and trailing commas optional)."""
+    paths = []
+    seen = set()
+    for raw in normalize_newlines(body or "").split("\n"):
+        line = raw.strip().rstrip(",").strip()
+        if not line:
+            continue
+        if len(line) >= 2 and line[0] == line[-1] and line[0] in ('"', "'"):
+            line = line[1:-1].strip()
+        line = line.replace("\\", "/")
+        if not line or line in seen:
+            continue
+        if os.path.isabs(line) or line.startswith("/") or any(part == ".." for part in line.split("/")):
+            handle_output("Add Boot path must stay inside the project: " + line, "failed")
+            continue
+        seen.add(line)
+        paths.append(line)
+    return paths
+
+
+def add_boot(mod_list, paths, target_file, mod_file):
+    if not paths:
+        return
+    rel = os.path.relpath(target_file, project_root).replace("\\", "/")
+    mod_list.append({
+        "type": "boot",
+        "old_line": f"[Add Boot {mod_file} -> {rel}]",
+        "paths": paths,
+        "target": target_file,
+        "mod_file": mod_file,
+        "command": "Add Boot",
+    })
+
+
+def insert_boot_scripts(content, paths):
+    """Insert quoted script paths into var scripts = [ ... ];. Skips duplicates."""
+    match = SCRIPTS_ARRAY.search(content)
+    if not match:
+        return content, [], [], "Could not find var scripts = [ ... ]; in boot.js"
+    inner = match.group(2)
+    existing = []
+    for found in re.finditer(r'["\']([^"\']+)["\']', inner):
+        existing.append(found.group(1).replace("\\", "/"))
+    existing_set = set(existing)
+    added = []
+    skipped = []
+    for path in paths:
+        if path in existing_set:
+            skipped.append(path)
+            continue
+        added.append(path)
+        existing.append(path)
+        existing_set.add(path)
+    if not added:
+        return content, added, skipped, None
+    indent = "    "
+    last_quoted = None
+    for line in inner.split("\n"):
+        if re.search(r'["\'][^"\']+["\']', line):
+            last_quoted = line
+    if last_quoted:
+        spaces = len(last_quoted) - len(last_quoted.lstrip(" \t"))
+        indent = last_quoted[:spaces] or indent
+    rebuilt = []
+    for path in existing:
+        rebuilt.append(f'{indent}"{path}",')
+    new_inner = "\n" + "\n".join(rebuilt)
+    new_content = content[:match.start()] + match.group(1) + new_inner + match.group(3) + content[match.end():]
+    return new_content, added, skipped, None
 
 
 def add_append(mod_list, new_line_stripped, target_file, mod_file, command="Add Javascript"):
@@ -294,13 +379,22 @@ def proc_replacement(mod_content, mod_list, mod_file_indexes, mod_file, old_deli
             command = chunk.get("command") or "Replace"
             if chunk.get("kind") == "append" and not chunk.get("target"):
                 raise ValueError(command + " requires a file: " + command + " [path/file.ext]:")
-            target_file = resolve_patch_target(chunk.get("target") or "")
+            if chunk.get("kind") == "boot":
+                target_file = resolve_patch_target(chunk.get("target") or "js/boot.js")
+            else:
+                target_file = resolve_patch_target(chunk.get("target") or "")
         except ValueError as e:
             handle_output(str(e), "failed")
             handle_output(str(e), "log")
             continue
 
-        if chunk.get("kind") == "append":
+        if chunk.get("kind") == "boot":
+            paths = parse_boot_script_lines(replacement)
+            if not paths:
+                continue
+            add_boot(mod_list, paths, target_file, mod_file)
+            label = f"[Add Boot {mod_file} -> {os.path.relpath(target_file, project_root)}]"
+        elif chunk.get("kind") == "append":
             new_line_stripped = replacement.strip()
             if not new_line_stripped:
                 continue
@@ -372,6 +466,34 @@ def patch_one_file(target_file, items, mod_file_indexes, totals):
     rel = os.path.relpath(target_file, project_root)
 
     for item in items:
+        if item.get('type') == 'boot':
+            new_content, added, skipped, error = insert_boot_scripts(content, item.get('paths') or [])
+            if error:
+                handle_output(f"[{rel}] {error}", "log")
+                handle_output(f"[{rel}] {error}", "failed")
+                totals['failed'] += 1
+                for key, value in mod_file_indexes.items():
+                    if item['old_line'] in value:
+                        totals['failed_mods'].append(key)
+                continue
+            content = new_content
+            if added:
+                handle_output(
+                    f"[{rel}] Add Boot inserted {', '.join(added)}"
+                    + (f" (already present: {', '.join(skipped)})" if skipped else "")
+                    + f" from {item.get('mod_file', 'mod')}",
+                    "log",
+                )
+            else:
+                handle_output(
+                    f"[{rel}] Add Boot already present: {', '.join(skipped)} from {item.get('mod_file', 'mod')}",
+                    "log",
+                )
+            totals['made'] += 1
+            for key, value in mod_file_indexes.items():
+                if item['old_line'] in value:
+                    totals['successful_mods'].append(key)
+            continue
         if item.get('type') == 'append':
             if content and not content.endswith('\n'):
                 content += '\n'
@@ -412,6 +534,35 @@ def patch_one_file(target_file, items, mod_file_indexes, totals):
         file.write(content)
 
 
+def parse_depends_value(value):
+    """Split a Depends On: value into tokens. Commas; quotes optional."""
+    value = (value or "").strip()
+    if not value:
+        return []
+    parts = []
+    current = []
+    in_quote = None
+    for ch in value:
+        if in_quote:
+            if ch == in_quote:
+                in_quote = None
+            else:
+                current.append(ch)
+        elif ch in ('"', "'"):
+            in_quote = ch
+        elif ch == ",":
+            token = "".join(current).strip()
+            if token:
+                parts.append(token)
+            current = []
+        else:
+            current.append(ch)
+    token = "".join(current).strip()
+    if token:
+        parts.append(token)
+    return parts
+
+
 def parse_mod_meta(mod_content):
     meta = {
         "name": "",
@@ -420,6 +571,7 @@ def parse_mod_meta(mod_content):
         "category": "",
         "version": "",
         "game_version": "",
+        "depends": [],
     }
     key_map = {
         "name": "name",
@@ -429,6 +581,9 @@ def parse_mod_meta(mod_content):
         "version": "version",
         "game version": "game_version",
         "game_version": "game_version",
+        "depends on": "depends",
+        "depends": "depends",
+        "dependencies": "depends",
     }
     for raw in normalize_newlines(strip_mod_comments(mod_content)).split("\n"):
         line = raw.strip()
@@ -440,7 +595,9 @@ def parse_mod_meta(mod_content):
             continue
         key, value = line.split(":", 1)
         mapped = key_map.get(key.strip().lower())
-        if mapped:
+        if mapped == "depends":
+            meta["depends"].extend(parse_depends_value(value))
+        elif mapped:
             meta[mapped] = value.strip()
     return meta
 
@@ -510,6 +667,38 @@ def restore_backups(root=None):
     return {"ok": len(missing) == 0, "restored": restored, "missing": missing}
 
 
+def write_applied_mods_js(mod_files):
+    """Fallback the in-game Mod List reads when it cannot fetch kittyloader.json."""
+    rows = []
+    found = {}
+    for name, path in iter_mod_files(mods_folder, None):
+        found[name.lower()] = path
+    for name in mod_files or []:
+        base = os.path.basename(str(name))
+        path = found.get(base.lower())
+        meta = {}
+        rel = base
+        if path and os.path.isfile(path):
+            with open(path, "r", encoding="utf-8", errors="ignore") as handle:
+                meta = parse_mod_meta(handle.read())
+            try:
+                rel = os.path.relpath(path, mods_folder).replace("\\", "/")
+            except ValueError:
+                rel = base
+        rows.append({
+            "file": base,
+            "name": meta.get("name") or os.path.splitext(base)[0],
+            "author": meta.get("author") or "",
+            "version": meta.get("version") or "",
+            "rel": rel,
+            "depends": list(meta.get("depends") or []),
+        })
+    dest = os.path.join(mods_folder, "appliedMods.js")
+    body = "window.LT = window.LT || {};\nLT.APPLIED_MODS = " + json.dumps(rows, indent=2, ensure_ascii=False) + ";\n"
+    with open(dest, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(body)
+
+
 def run_patch(enabled_mod_files=None, pause=False, root=None):
     """
     Apply mods. Double-click uses every .mod file.
@@ -520,6 +709,7 @@ def run_patch(enabled_mod_files=None, pause=False, root=None):
     create_directories()
     mod_list, mod_file_indexes, successful_mod_files = load_mods(mods_folder, enabled_mod_files)
     patch_targets(mod_list, mod_file_indexes)
+    write_applied_mods_js(successful_mod_files)
     result = {
         "ok": True,
         "processed": successful_mod_files,

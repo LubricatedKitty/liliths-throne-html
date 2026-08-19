@@ -50,7 +50,7 @@
   }
 
   function harpyPacified() {
-    return !!(LT.game.flags && LT.game.flags.harpyPacified);
+    return !!(LT.game.flags && (LT.game.flags.harpyPacified || LT.game.flags.harpyQuest === "complete"));
   }
 
   function bindMugger(npc) {
@@ -221,6 +221,9 @@
       storm: false,
       prostitute: false,
       feminine: opts.feminine,
+      gender: opts.gender,
+      includeHumanChance: false,
+      pool: "harpy",
       race: opts.race || { id: "harpy", fem: "harpy", masc: "harpy" },
       level: opts.level != null ? opts.level : 2 + Math.floor(Math.random() * 4),
     });

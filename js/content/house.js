@@ -27,6 +27,9 @@
   function placeBody() {
     var pt = placeType();
     var loc = placeInfo();
+    if (pt === "LILAYA_HOME_ARTHUR_ROOM") {
+      return LT.parseFromXML("places/dominion/lilayasHome/arthursRoom", "ROOM_ARTHUR");
+    }
     if (pt === "LILAYA_HOME_ROOM_PLAYER") {
       return (
         p("Your bedroom is positioned close to the main staircase linking the entrance hall to the first-floor corridor, and is one of the largest chambers in the entire mansion. Opposite the room's main doorway, a set of four large, sash windows provide an excellent view of the courtyard garden below, while off to the left, another door leads through into your private ensuite bathroom.") +
@@ -63,6 +66,18 @@
     }
     if (pt === "LILAYA_HOME_STAIR_DOWN_SECONDARY") {
       return p("In this particular section of the corridor, there's a large recess set into the wall which is home to a series of carpeted stairs. While not as grand as the one positioned in front of the mansion's main entrance, this wide, sweeping staircase is nevertheless far more impressive than any you'd find in a regular house, and you wonder whether you should make use of it to travel down to the ground floor...");
+    }
+    if (pt === "LILAYA_HOME_DUNGEON_CELL") {
+      return p("The cells within Lilaya's dungeon are designed to be cramped and uncomfortable. Iron bars and a thin mattress leave no doubt that anyone housed here is a prisoner as well as a slave.");
+    }
+    if (pt === "acexp_dungeon_corridor") {
+      return p("A corridor connecting the various rooms in the dungeon under Lilaya's mansion.");
+    }
+    if (pt === "acexp_dungeon_room") {
+      return p("A fully equipped BDSM bedroom in the dungeon under Lilaya's mansion.");
+    }
+    if (pt === "acexp_dungeon_stairs" || pt === "acexp_dungeon_stairs_garden") {
+      return p("This spiral staircase connects Lilaya's mansion with the dungeon below.");
     }
     if (pt === "LILAYA_HOME_GARDEN") {
       return (
@@ -115,6 +130,34 @@
           if (typeof LT.updateHouseNpcLocations === "function") LT.updateHouseNpcLocations();
           LT.game.textStart = "<p>You sleep until morning. After having a good rest, you feel full of energy.</p>";
           LT.game.setContent(LT.game.currentNode);
+        }),
+      );
+    }
+    if (pt === "LILAYA_HOME_GARDEN" || pt === "LILAYA_HOME_FOUNTAIN") {
+      list.push(
+        new LT.Response("Descend", "Take the spiral staircase down into the dungeon under Lilaya's mansion.", null, function () {
+          if (typeof LT.enterWorld === "function") LT.enterWorld("acexp_dungeon", "acexp_dungeon_stairs_garden");
+        }),
+      );
+    }
+    if (pt === "LILAYA_HOME_LIBRARY") {
+      list.push(
+        new LT.Response("Descend", "Take the spiral staircase from the library down into the dungeon.", null, function () {
+          if (typeof LT.enterWorld === "function") LT.enterWorld("acexp_dungeon", "acexp_dungeon_stairs");
+        }),
+      );
+    }
+    if (pt === "acexp_dungeon_stairs_garden") {
+      list.push(
+        new LT.Response("Ascend", "Return to the garden courtyard.", null, function () {
+          if (typeof LT.enterWorld === "function") LT.enterWorld("LILAYAS_HOUSE_GROUND_FLOOR", "LILAYA_HOME_GARDEN");
+        }),
+      );
+    }
+    if (pt === "acexp_dungeon_stairs") {
+      list.push(
+        new LT.Response("Ascend", "Return to the library.", null, function () {
+          if (typeof LT.enterWorld === "function") LT.enterWorld("LILAYAS_HOUSE_GROUND_FLOOR", "LILAYA_HOME_LIBRARY");
         }),
       );
     }
@@ -185,8 +228,14 @@
     "LILAYA_HOME_ROOM_LILAYA",
     "LILAYA_HOME_ROOM_ROSE",
     "LILAYA_HOME_ROOM_PLAYER",
+    "LILAYA_HOME_ARTHUR_ROOM",
     "LILAYA_HOME_STAIR_DOWN",
     "LILAYA_HOME_STAIR_DOWN_SECONDARY",
+    "LILAYA_HOME_DUNGEON_CELL",
+    "acexp_dungeon_corridor",
+    "acexp_dungeon_room",
+    "acexp_dungeon_stairs",
+    "acexp_dungeon_stairs_garden",
   ];
   for (var i = 0; i < housePlaces.length; i++) definePlaceNode("place." + housePlaces[i], housePlaces[i]);
 

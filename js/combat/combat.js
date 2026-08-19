@@ -15,6 +15,7 @@
     ch.maxAP = ch.maxAP || 3;
     var penalty = typeof LT.consumeFlash === "function" ? LT.consumeFlash(ch) : 0;
     ch.remainingAP = Math.max(0, ch.maxAP - penalty);
+    ch.turnStartAP = ch.remainingAP;
     ch.selectedMoves = [];
   }
 
@@ -220,6 +221,22 @@
       LT.setMoveCooldown(this.player, moveId, move.cooldown);
     }
     return null;
+  };
+
+  LT.combat.resetSelectedMoves = function () {
+    if (!this.active || this.finished || !this.player) return false;
+    var moves = this.player.selectedMoves || [];
+    if (!moves.length) return false;
+    var i;
+    for (i = 0; i < moves.length; i++) {
+      var move = LT.MOVES[moves[i].id];
+      if (move && move.cooldown && typeof LT.setMoveCooldown === "function") {
+        LT.setMoveCooldown(this.player, moves[i].id, 0);
+      }
+    }
+    this.player.selectedMoves = [];
+    this.player.remainingAP = this.player.turnStartAP != null ? this.player.turnStartAP : this.player.maxAP || 3;
+    return true;
   };
 
   LT.combat.predictions = function (ch) {

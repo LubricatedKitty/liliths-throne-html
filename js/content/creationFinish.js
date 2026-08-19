@@ -381,6 +381,10 @@
             if (typeof LT.enterWorld === "function") {
               LT.enterWorld("LILAYAS_HOUSE_FIRST_FLOOR", "LILAYA_HOME_ROOM_PLAYER");
             }
+            if (typeof LT.markCharacterEncountered === "function") {
+              LT.markCharacterEncountered("lilaya");
+              LT.markCharacterEncountered("rose");
+            }
           },
         ),
       ];

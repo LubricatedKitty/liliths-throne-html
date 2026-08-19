@@ -1,0 +1,1141 @@
+LT Modding Guide
+================
+How this HTML rebuild of Lilith's Throne is put together, where every
+major system lives, and how to write mods for it with KittyPatcher.
+
+Read docs/KittyPatcher Modding Guide.txt first. That file is the
+patcher. This file is the game.
+
+======================================================================
+1. Philosophy
+======================================================================
+
+Beginner:
+    Replace / With is allowed on almost anything. Copy a function out
+    of the game, change it, patch it back. You will learn faster by
+    seeing the real code than by reading this guide alone.
+
+As you get better:
+    Add Boot should be how you add your .js to the load order.
+    Do not Replace the "js/main.js" line in js/boot.js.
+
+    After that, your mod should be as much JavaScript as possible.
+    Register nodes. Push items onto LT.ITEMS. Push tiles onto
+    window.allGrids. Hook arrays the game already iterates.
+
+    Only Replace core game code when you have no other way: a missing
+    hook, a hardcoded check, or a function that is not extensible.
+
+Why:
+    Two JS files can both run. Two Replace blocks on the same function
+    cannot. A small boot.js hook survives a game update better than a
+    400-line function replace.
+
+The rest of this guide assumes the advanced pattern, and shows the
+beginner Replace form only where it helps you find the live code.
+
+======================================================================
+2. How the game thinks
+======================================================================
+
+Everything hangs off window.LT.
+
+A "scene" is a DialogueNode registered with LT.defineNode({...}).
+The player is always looking at one node. Clicking a Response either
+runs effects and stays, or runs effects and LT.game.setContent(id)
+to another node.
+
+Time is LT.game.secondsPassed. Many nodes set secondsPassed so that
+choosing any response on them advances the clock.
+
+The map is a named grid in window.allGrids. The player's place is
+LT.game.player.location = { world, place, x, y }.
+place.SOMETHING is the usual node id for a tile.
+
+Flags live on LT.game.flags. Quests, "has met X", weather leftovers,
+nightlife state, all of it. If you need save-safe state, put it there.
+
+Text from the official game is stored as
+    LT.TEXT["path/like/official/xml"] = { TAG: "html with [pc.name]..." }
+and printed with
+    LT.parseFromXML("path/like/official/xml", "TAG")
+or
+    LT.parse("raw string with [pc.name] and #IF ... #ENDIF")
+
+Combat and sex are their own kernels. They temporarily take over
+responses, then return to a node you named when you started them.
+
+======================================================================
+3. Load order
+======================================================================
+
+js/boot.js lists every official script, in this order (grouped):
+
+    Core
+        js/lt.js
+        js/paths.js
+        js/engine/colours.js
+        js/character/enums.js
+        js/character/statusEffects.js
+        js/character/bodyEnums.js
+        js/character/body.js
+        js/ui/openUI.js
+        js/ui/tooltip.js
+        js/engine/response.js
+        js/content/nodes.js
+
+    Combat kernel
+        js/combat/attack.js
+        js/combat/moves.js
+        js/combat/tease.js
+        js/combat/spells.js
+        js/combat/status.js
+        js/combat/damage.js
+        js/combat/loot.js
+        js/combat/combat.js
+        js/content/combatNodes.js
+
+    Sex kernel
+        js/sex/sex.js
+        js/content/sexNodes.js
+
+    Characters and items
+        js/character/names.js
+        js/character/player.js
+        js/character/appearance.js
+        js/character/clothing.js
+        js/character/npcGear.js
+        js/items/weapons.js
+        js/items/weaponRuntime.js
+        js/items/spellBooks.js
+        js/items/items.js
+        js/items/harpyMatriarch.js
+        js/items/enchanting.js
+        js/items/tfApply.js
+        js/character/slavery.js
+        js/combat/weaponSpecials.js
+        js/character/occupations.js
+        js/character/npcs.js
+        js/character/npcBodies.js
+
+    Engine
+        js/engine/game.js
+        js/engine/properties.js
+        js/engine/preferences.js
+        js/engine/save.js
+        js/engine/utilText.js
+
+    Official text packs (LT.TEXT[...])
+        js/text/*.js
+
+    UI
+        js/ui/responses.js
+        js/ui/menus/attributes.js
+        js/ui/menus/chromeButtons.js
+        js/ui/menus/saveLoad.js
+        js/ui/menus/phone.js
+        js/ui/menus/inventory.js
+        js/ui/menus/charactersPresent.js
+
+    Content (creation, worlds, shops, quests)
+        js/content/characterCreation.js
+        js/content/advancedAppearance.js
+        js/content/bodyChanging.js
+        js/content/creationFinish.js
+        js/content/prologue.js
+        js/grid/grid.js
+        js/maps/allGrids.js
+        js/maps/placeVisuals.js
+        js/maps/worldMapVisuals.js
+        js/grid/roam.js
+        js/content/weather.js
+        js/content/world.js
+        js/content/alleys.js
+        js/content/alleySubmit.js
+        ... every Dominion hub ...
+        js/content/enchantNodes.js
+        js/content/bootFlow.js
+        js/content/options.js
+        js/main.js
+
+Hook your script AFTER "js/main.js" unless you must run earlier.
+
+    Add Boot:
+    "mods/myMod/myMod.js"
+
+    Add Boot inserts the path into js/boot.js after the last official
+    (or already-modded) script. Two mods can both Add Boot without
+    fighting over the "js/main.js" line.
+
+    Only if your JS must run earlier than main.js, use a small Replace
+    to insert it next to the file you depend on. Prefer Add Boot.
+
+======================================================================
+4. Where to find every major system
+======================================================================
+
+4.1 Engine and flow
+    js/lt.js                     LT namespace, version
+    js/engine/game.js            LT.game, setContent, choose, advanceTime
+    js/engine/response.js        LT.Response, disable, withColour, withTime
+    js/content/nodes.js          LT.defineNode, LT.getNode, LT.hasNode
+    js/engine/save.js            serialize / restore, including alley NPCs
+    js/engine/utilText.js        LT.parse, LT.parseFromXML, #IF, [pc.name]
+    js/engine/properties.js      Content options, localStorage lt-properties
+    js/engine/preferences.js     Gender / furry / fetish / spawn sliders
+    js/engine/colours.js         LT.Colour.*
+    js/content/bootFlow.js       Main menu, new game, continue
+    js/main.js                   First paint after all scripts load
+
+4.2 Player, body, appearance
+    js/character/player.js       createNewPlayer, health/mana, refreshVitals
+    js/character/body.js         body object
+    js/character/bodyEnums.js    cups, hair, skin, etc.
+    js/character/enums.js        Gender, Orientation, Femininity
+    js/character/appearance.js   inspect / information screen, artwork
+    js/character/clothing.js     LT.CLOTHING, LT.makeClothing, slots
+    js/content/characterCreation.js
+    js/content/advancedAppearance.js
+    js/content/bodyChanging.js   TF / designer
+    js/content/creationFinish.js Job pick, skip prologue
+    js/character/occupations.js  Unemployed and starting jobs
+    js/character/pregnancy.js    Pregnancy tick and flags
+    js/character/statusEffects.js WELL_RESTED, storm, sex-end statuses
+
+4.3 Unique NPCs
+    js/character/npcs.js         ensureLilaya, ensureRalph, ensureJules,
+                                 ensureAngel, ensureKay, npcAtCurrentTile,
+                                 house locations
+    js/character/npcBodies.js    Unique NPC bodies
+    js/character/npcGear.js      Mugger / prostitute outfits
+    js/character/slavery.js      Slaves, jobs, namedCharacterIds, contacts
+    js/character/names.js        randomHumanNameTriplet
+
+    Per-character content (dialogue + quests):
+        Lilaya / Rose / lab      js/content/lab.js, house.js, houseManage.js
+                                 js/text/lab.js, lilayaBirthing.js
+        Arthur / Felicia         js/content/demonHome.js, js/text/apartment.js
+        Brax / Candi / HQ        js/content/enforcerHQ.js
+                                 js/text/enforcerGeneric.js, enforcerBrax.js
+        Scarlett / Helena        js/content/slaverAlley.js, helenaNest.js,
+                                 helenaRomance.js, helenaBoutique.js,
+                                 helenaHotel.js
+                                 matching js/text/helena*.js, scarlett.js
+        Zaranix / Amber /
+        Katherine / Kelly        js/content/zaranix.js, zaranixInterior.js
+                                 js/text/zaranixGround.js, zaranixFirst.js
+        Nyan / Kate / Ashley /
+        Ralph / Vicky / Pix /
+        Kay                      js/content/shoppingArcade.js, arcadeShops.js,
+                                 pixGym.js
+                                 matching js/text/* shop files
+        Angel / Bunny / Loppy    js/content/angelsKiss.js, js/text/angelsKiss.js
+        Jules / Kalahari /
+        Kruger / Hannah          js/content/nightlife.js
+                                 js/text/theWateringHole.js, lightsOut.js
+        Harpy trio               js/content/harpyTrio.js
+                                 js/text/harpyBimbo.js, harpyDominant.js,
+                                 harpyNympho.js
+
+4.4 Map, travel, weather
+    js/maps/allGrids.js          window.allGrids.DOMINION, HARPY_NEST, ...
+                                 LT.places.PLACE_TYPE
+    js/maps/placeVisuals.js      Tile icons and colours
+    js/maps/worldMapVisuals.js   World map art
+    js/grid/grid.js              renderGrid, movePlayer, getCurrentTile
+    js/grid/roam.js              Click-to-walk
+    js/content/world.js          LT.travelResponses, LT.enterWorld,
+                                 generic place. nodes
+    js/content/weather.js        Arcane storm, vignette, storm streets
+
+4.5 Encounters (procedural)
+    js/content/encounters.js     Street / park / storm / harpy tables
+    js/content/alleys.js         Alley muggers, persist on tile
+    js/content/alleySubmit.js    Submit-too-much scenes
+    js/content/lootNpc.js        After-combat loot
+    js/text/alleywayAttack.js
+    js/text/alleywayAttackSubmit.js
+    js/text/prostitute.js
+    js/text/stormStreetAttack.js
+    js/text/harpyAttack.js
+    js/text/encounterGeneric.js
+
+4.6 Combat
+    js/combat/combat.js          Turn loop, AP, Reset, submit
+    js/combat/moves.js           Strike, offhand, wait, flee
+    js/combat/tease.js           Tease actions
+    js/combat/spells.js          Spells
+    js/combat/attack.js          Unarmed / lust ranges
+    js/combat/damage.js          Typed damage
+    js/combat/status.js          Combat statuses
+    js/combat/loot.js            Combat loot
+    js/combat/weaponSpecials.js  Special weapon effects
+    js/content/combatNodes.js    Fight UI tabs, Reset at slot 14
+    js/items/weapons.js          Weapon definitions
+    js/items/weaponRuntime.js    Equip / hit text
+
+    Start a fight with LT.ResponseCombat("Fight", tip, {
+      enemy: npc,
+      victoryNode: "my.victory",
+      defeatNode: "my.defeat",
+      returnNode: "place.DOMINION_STREET",
+      escapeChance: 25,
+      onVictory: function () { return ""; },
+      onDefeat: function () { return ""; },
+      onEscape: function () {},
+    })
+
+4.7 Sex
+    js/sex/sex.js                Actions, partner AI, clothing, positions
+    js/content/sexNodes.js       sex.scene tabs (Sex / Self / Positioning / Misc)
+
+    Start sex with LT.ResponseSex("Sex", tip, {
+      partner: npc,
+      playerDom: true,
+      consensual: true,
+      postSexNode: "my.afterSex",
+      startText: "<p>You pull [npc.name] close.</p>",
+      positionName: "Standing",
+    })
+
+    Partners are added to Characters Present automatically while sex
+    is active.
+
+4.8 Items, shops, enchanting
+    js/items/items.js            LT.ITEMS, addItem, countItems, shopItemIds
+    js/items/enchanting.js       Enchanting
+    js/items/tfApply.js          TF potions
+    js/items/spellBooks.js       Spell books
+    js/items/harpyMatriarch.js   Lollipops / perfume
+    js/ui/menus/inventory.js     Inventory UI
+    js/content/enchantNodes.js   Enchanting screens
+
+    Shops look at item.soldBy:
+        "ralph"   Ralph's Snacks
+        "vicky"   Arcane Arts
+        "finch"   Slavery Administration
+        "nyan"    Nyan's Clothing (clothing, not ITEMS)
+        "kate"    Succubi's Secrets
+    Adding soldBy: ["ralph"] on your item is enough to stock Ralph.
+
+4.9 Slavery, stocks, nightlife extras
+    js/character/slavery.js
+    js/content/publicStocks.js
+    js/content/angelsKiss.js     Player prostitution
+    js/text/enslavement.js
+
+4.10 UI, HUD, options, phone
+    js/ui/menus/attributes.js    Left HUD
+    js/ui/menus/charactersPresent.js
+    js/ui/menus/phone.js         Contacts, selfie, journal
+    js/ui/menus/saveLoad.js
+    js/ui/menus/chromeButtons.js
+    js/ui/responses.js           Response buttons + hotkeys
+    js/ui/tooltip.js
+    js/content/options.js        Content Options pages
+    css/theme.css                All styling
+
+4.11 Text
+    js/text/*.js                 Official XML, converted to LT.TEXT packs.
+                                 Do not invent official story. For YOUR
+                                 content, either add a new pack:
+                                     LT.TEXT["mods/myMod/myText"] = { HI: "<p>Hi.</p>" };
+                                 or just return HTML from getContent.
+
+======================================================================
+5. The node, the response, the flag
+======================================================================
+
+Register a scene:
+
+    LT.defineNode({
+      id: "my.hello",
+      ui: "dialogue",
+      title: "A quiet corner",
+      secondsPassed: 60,
+      chrome: { left: true, right: true },
+      travelDisabled: false,
+      applyPreParsingEffects: function () {
+        // runs before getContent. Good for spawning NPCs.
+      },
+      getContent: function () {
+        return "<p>You find a quiet corner of Dominion.</p>";
+      },
+      getResponses: function () {
+        return [
+          new LT.Response("Leave", "Head back to the street.", "place.DOMINION_STREET"),
+          new LT.Response("Wait", "Stand here a while.", "my.hello", function () {
+            LT.game.flags.myWaited = (LT.game.flags.myWaited || 0) + 1;
+          }),
+        ];
+      },
+    });
+
+LT.Response(title, tooltip, nextNodeId, effectsFn)
+
+    nextNodeId  string id, or null to stay (you can setContent yourself)
+    effectsFn   runs when clicked, before the next node is shown
+    .disable("reason")
+    .withColour(LT.Colour.GENERIC_GOOD)
+    .withTime(120)   extra seconds on top of the node's secondsPassed
+
+Useful helpers already on LT.Response / engine:
+
+    LT.ResponseCombat(...)
+    LT.ResponseSex(...)
+    LT.effectsOnly(title, tip, fn)    no node change unless you setContent
+
+Flags and quests:
+
+    LT.game.flags.myQuest = "started";
+    LT.game.flags.myQuest = "spokeToRalph";
+    LT.game.flags.myQuest = "complete";
+
+    Official main quest uses LT.game.flags.quest = "MAIN_1_A_LILAYAS_TESTS"
+    and LT.questReached("MAIN_1_D_SLAVERY").
+
+    For a custom quest, keep your own string on flags and branch in
+    getContent / getResponses. Phone journal reads flags.quest for the
+    official line; add a Phone entry only if you patch phone.js or hook
+    a function you added.
+
+    Put anything you want saved on LT.game.flags or on the NPC object
+    if save.js already serializes that NPC. Unique NPCs in game.npcs
+    are saved. Alley transients with alley_* ids are saved. Random
+    locals you only kept in a closure are not.
+
+======================================================================
+6. Text and parsing
+======================================================================
+
+    LT.parse("Hello, [pc.name].")
+    LT.parseFromXML("places/dominion/shoppingArcade/ralphsSnacks", "EXTERIOR")
+
+    LT.withParseTargets({ npc: someNpc, npc2: other, pc: LT.game.player }, function () {
+      return LT.parse("[npc.speech(Hello!)]");
+    });
+
+Official tokens you will use constantly:
+
+    [pc.name] [pc.she] [pc.her] [pc.herHim] [npc.name] [npc.speech(Hi)]
+    [npc.a_raceFull] [style.colourGood(text)]
+    #IF(pc.hasPenis()) ... #ELSE ... #ENDIF
+    #IF npc.isFeminine() #THEN ... #ENDIF
+
+If you add a named NPC, give them getName, isFeminine, getSpeechColour
+so [myNpc.speech(...)] resolves. Parse looks up
+LT.game.npcs[name.toLowerCase()], so store the NPC on a lowercase key
+(mynpc) even if the token is written [myNpc.speech]. Unique NPCs
+created with the helpers in js/character/npcs.js already do.
+
+New text pack from a mod (preferred over replacing official XML):
+
+    LT.TEXT["mods/myMod/dialogue"] = {
+      INTRO: "<p>[myNpc.speech(I have been waiting.)]</p>",
+      REPEAT: "<p>You greet [myNpc.name] again.</p>",
+    };
+
+    getContent: function () {
+      return LT.parseFromXML("mods/myMod/dialogue", LT.game.flags.metMyNpc ? "REPEAT" : "INTRO");
+    }
+
+======================================================================
+7. Recipe: add dialogue to an existing character
+======================================================================
+
+Find their content file in section 4.3. Example: Ralph, interior
+responses live in js/content/shoppingArcade.js (ralphShopResponses).
+
+Beginner (Replace the response list):
+
+    Replace [js/content/shoppingArcade.js]:
+    new LT.Response("Trade with Ralph", "Go and ask Ralph about the special consumables on display.", "ralph.trade", function () {
+        LT.game.flags.ralphIntroduced = true;
+        LT.resetRalphDiscountCheck();
+      }),
+    With:
+    new LT.Response("Trade with Ralph", "Go and ask Ralph about the special consumables on display.", "ralph.trade", function () {
+        LT.game.flags.ralphIntroduced = true;
+        LT.resetRalphDiscountCheck();
+      }),
+    new LT.Response("Ask about tea", "Ask Ralph if he has been brewing anything new.", "my.ralphTea"),
+
+Advanced (do not touch shoppingArcade.js):
+
+    In your JS, after load, wrap the node:
+
+    (function () {
+      var node = LT.getNode("ralph.shop");
+      var original = node.getResponses;
+      node.getResponses = function (game, tab) {
+        var list = original.call(this, game, tab) || [];
+        list.push(new LT.Response("Ask about tea", "Ask Ralph if he has been brewing anything new.", "my.ralphTea"));
+        return list;
+      };
+
+      LT.defineNode({
+        id: "my.ralphTea",
+        ui: "dialogue",
+        title: "Ralph's Snacks",
+        secondsPassed: 30,
+        chrome: { left: true, right: true },
+        getContent: function () {
+          return LT.parse("<p>[ralph.speech(Tea? I sell what sells, [pc.name]. Try the Feline's Fancy.)]</p>");
+        },
+        getResponses: function () {
+          return [new LT.Response("Back", "Return to the counter.", "ralph.shop")];
+        },
+      });
+    })();
+
+Wrapping getResponses is the standard way to add buttons to an
+existing character without colliding with other mods.
+
+Call LT.ensureRalph() (or whoever) before you parse their speech if
+they might not exist yet.
+
+======================================================================
+8. Recipe: a custom character with dialogue (and optional quest)
+======================================================================
+
+    (function () {
+      LT.ensureMyNpc = function () {
+        LT.game.npcs = LT.game.npcs || {};
+        if (LT.game.npcs.myNpc) return LT.game.npcs.myNpc;
+        var n = {
+          id: "mynpc",
+          name: "Mira",
+          surname: "Voss",
+          feminine: true,
+          raceName: "cat-morph",
+          fullRace: "cat-girl",
+          speechColour: LT.Colour.FEMININE,
+          level: 4,
+          physique: 12,
+          playerKnowsName: true,
+          location: { world: "DOMINION", place: "DOMINION_PARK" },
+          getName: function () { return this.name; },
+          getFullName: function () { return this.name + " " + this.surname; },
+          isFeminine: function () { return true; },
+          getSpeechColour: function () { return this.speechColour; },
+          getRaceName: function () { return this.fullRace; },
+        };
+        if (typeof LT.refreshVitals === "function") LT.refreshVitals(n, true);
+        LT.game.npcs.mynpc = n;
+        LT.game.npcs.myNpc = n;
+        return n;
+      };
+
+      LT.defineNode({
+        id: "my.mira",
+        ui: "dialogue",
+        title: "Mira",
+        secondsPassed: 60,
+        chrome: { left: true, right: true },
+        applyPreParsingEffects: function () {
+          LT.ensureMyNpc();
+          if (typeof LT.markCharacterEncountered === "function") LT.markCharacterEncountered("mynpc");
+        },
+        getContent: function () {
+          var step = LT.game.flags.miraQuest || "meet";
+          if (step === "meet") {
+            return LT.parse("<p>[myNpc.A_raceFull] waves you over. [myNpc.speech(You look like you can handle a small job.)]</p>");
+          }
+          if (step === "working") {
+            return LT.parse("<p>[myNpc.speech(Did you find my parcel at Ralph's?)]</p>");
+          }
+          return LT.parse("<p>[myNpc.speech(Thanks again. I owe you a drink some time.)]</p>");
+        },
+        getResponses: function () {
+          var step = LT.game.flags.miraQuest || "meet";
+          var list = [new LT.Response("Leave", "Step away.", "place.DOMINION_PARK")];
+          if (step === "meet") {
+            list.push(new LT.Response("Accept", "Take the job.", "my.mira", function () {
+              LT.game.flags.miraQuest = "working";
+            }));
+          }
+          if (step === "working" && LT.countItems(LT.game.player, "my_mod_parcel") > 0) {
+            list.push(new LT.Response("Give parcel", "Hand it over.", "my.mira", function () {
+              LT.removeItemById(LT.game.player, "my_mod_parcel");
+              LT.game.flags.miraQuest = "done";
+              if (typeof LT.incrementMoney === "function") LT.incrementMoney(80);
+            }));
+          }
+          return list;
+        },
+      });
+    })();
+
+Then attach her to the park tile (see locations, below) with a
+"Talk to Mira" response, or set her location so she appears in
+Characters Present when you stand on that tile. npcAtCurrentTile
+already lists unique NPCs whose location.world / place / x / y
+match the player.
+
+If you omit x and y, a matching place is enough. Dominion parks
+are at (6,1), (14,4), and (6,16). Do not use (8,8): that tile is
+City Hall. The live example is mods/examples/miraQuest.mod.
+
+Giving her playerKnowsName + markCharacterEncountered puts her in
+Phone > Contacts the first time you meet her.
+
+======================================================================
+9. Recipe: quests, including quests on a specific character
+======================================================================
+
+A quest in this rebuild is a flag plus dialogue branches. That is it.
+
+    LT.game.flags.miraQuest = "meet" | "working" | "done"
+
+On a specific character, keep the flag name next to them
+(ralphTeaQuest, miraQuest) and only show the new buttons when the
+flag is in the right state. See section 7 for wrapping their
+getResponses.
+
+If the quest needs a journal line, wrap the phone journal node the
+same way, or add a Phone button that opens your own node.
+
+Do not overwrite LT.game.flags.quest unless you are replacing the
+official main quest. That flag is the main story.
+
+To gate content on official progress:
+
+    if (LT.questReached && LT.questReached("MAIN_1_D_SLAVERY")) { ... }
+
+======================================================================
+10. Recipe: items, and items in a shop
+======================================================================
+
+    LT.ITEMS.my_mod_parcel = {
+      id: "my_mod_parcel",
+      kind: "quest",
+      name: "Mira's parcel",
+      value: 0,
+      description: "A brown-paper parcel Mira asked you to collect.",
+    };
+
+    LT.ITEMS.my_mod_tea = {
+      id: "my_mod_tea",
+      kind: "food",
+      name: "sweet tea",
+      value: 12,
+      soldBy: ["ralph"],
+      description: "A cup of sweet tea from Ralph's back shelf.",
+    };
+
+soldBy is the shop hook. Ralph's trade screen calls LT.shopItemIds("ralph").
+You do not edit ralph.trade.
+
+Give the item to the player:
+
+    LT.addItem(LT.game.player, "my_mod_parcel");
+    LT.countItems(LT.game.player, "my_mod_parcel");
+    LT.removeItemById(LT.game.player, "my_mod_parcel");
+
+Weapons go in js/items/weapons.js as LT.WEAPONS (or whatever that
+file exports — read it and add a new key from your JS the same way).
+Clothing is LT.CLOTHING / LT.makeClothing in js/character/clothing.js.
+
+If you must add a use-effect that the inventory does not know about,
+wrap the inventory use handler, or Replace the smallest branch that
+switches on item.kind.
+
+======================================================================
+11. Recipe: a new location with its own grid
+======================================================================
+
+A place needs four things:
+
+    1. Tiles in window.allGrids.YOUR_WORLD
+    2. A node per unique placeType, id "place.YOUR_PLACE"
+    3. A way to get there (travelConfig on a Dominion tile, or a
+       button that calls LT.enterWorld)
+    4. Optional art in LT.placeVisuals / an svg under assets/map/
+
+Example: a two-tile cellar you enter from a Dominion street.
+
+    (function () {
+      window.allGrids = window.allGrids || {};
+      window.allGrids.MY_CELLAR = [
+        {
+          x: 0, y: 0,
+          location: {
+            name: "Cellar stairs",
+            color: "#5b3a29",
+            placeType: "MY_CELLAR_STAIRS",
+            passage: "place.MY_CELLAR_STAIRS",
+            description: "Damp stone steps lead down from the street hatch.",
+          },
+          travelConfig: {
+            label: "Exit",
+            nextGridName: "DOMINION",
+            nextLocationName: "the street",
+          },
+        },
+        {
+          x: 1, y: 0,
+          location: {
+            name: "Wine racks",
+            color: "#3b1f1f",
+            placeType: "MY_CELLAR_RACKS",
+            passage: "place.MY_CELLAR_RACKS",
+            description: "Dusty racks and a single oil lamp.",
+          },
+        },
+      ];
+
+      function cellarBody() {
+        var t = typeof getCurrentTile === "function" ? getCurrentTile() : null;
+        var loc = (t && t.location) || {};
+        return "<p>" + (loc.description || "You are in the cellar.") + "</p>";
+      }
+
+      LT.defineNode({
+        id: "place.MY_CELLAR_STAIRS",
+        ui: "dialogue",
+        title: "Cellar stairs",
+        secondsPassed: 30,
+        chrome: { left: true, right: true },
+        getContent: cellarBody,
+        getResponses: function () {
+          var list = LT.travelResponses ? LT.travelResponses() : [null];
+          list.push(new LT.Response("Look around", "Peer into the dark.", "place.MY_CELLAR_STAIRS"));
+          return list;
+        },
+      });
+
+      LT.defineNode({
+        id: "place.MY_CELLAR_RACKS",
+        ui: "dialogue",
+        title: "Wine racks",
+        secondsPassed: 30,
+        chrome: { left: true, right: true },
+        getContent: cellarBody,
+        getResponses: function () {
+          return LT.travelResponses ? LT.travelResponses() : [null];
+        },
+      });
+
+      // Street hatch: wrap a Dominion street node, or a specific tile.
+      if (LT.hasNode("place.DOMINION_STREET")) {
+        var street = LT.getNode("place.DOMINION_STREET");
+        var old = street.getResponses;
+        street.getResponses = function (game, tab) {
+          var list = old.call(this, game, tab) || [];
+          var loc = LT.game.player && LT.game.player.location;
+          if (loc && loc.x === 6 && loc.y === 2) {
+            list.push(new LT.Response("Cellar hatch", "Drop through the hidden hatch.", null, function () {
+              if (typeof LT.enterWorld === "function") LT.enterWorld("MY_CELLAR", "MY_CELLAR_STAIRS");
+              LT.game.setContent("place.MY_CELLAR_STAIRS");
+            }));
+          }
+          return list;
+        };
+      }
+    })();
+
+Notes:
+    - passage / node id is "place." + placeType by convention.
+    - LT.enterWorld("MY_CELLAR", "MY_CELLAR_STAIRS") loads the grid
+      and moves the player. Then setContent the matching node.
+    - travelConfig on a tile makes LT.travelResponses() offer Exit /
+      Enter / Upstairs automatically.
+    - Copy a real tile out of js/maps/allGrids.js (search for
+      DOMINION_STREET) if you want to see every field the renderer
+      understands.
+    - To stitch into the world map later, add a WORLD_MAP tile the
+      same way.
+    - Check the tile before you hardcode x/y. Dominion (10,10) is
+      Lilith's Plaza, not a street. The live example uses street
+      (6,2), just south of the north-west park:
+      mods/examples/cellarHatch.mod.
+
+Beginner alternative: Replace a single Dominion tile's location in
+allGrids.js. Do this only while learning. allGrids.js is huge and
+hostile to merge conflicts.
+
+======================================================================
+12. Recipe: procedural events with full dialogue
+======================================================================
+
+Official street / park / storm / harpy tables live in
+js/content/encounters.js.
+
+    LT.streetEncounterEntries()
+    LT.parkEncounterEntries()
+    LT.harpyWalkwayEntries()
+    LT.rollEncounterTable(entries, force)
+    LT.maybePlaceEncounter()
+
+The clean hook is to wrap the entry function:
+
+    (function () {
+      var original = LT.streetEncounterEntries;
+      LT.streetEncounterEntries = function () {
+        var list = original ? original() : [];
+        list.push({
+          id: "MY_STREET_EVENT",
+          weight: 8,
+          start: function () {
+            LT.game.flags.myStreetEvent = true;
+            return "my.streetEvent";
+          },
+        });
+        return list;
+      };
+
+      LT.defineNode({
+        id: "my.streetEvent",
+        ui: "dialogue",
+        title: "A dropped purse",
+        secondsPassed: 30,
+        travelDisabled: true,
+        chrome: { left: true, right: true },
+        getContent: function () {
+          return "<p>A purse lies in the gutter. Nobody else has seen it yet.</p>";
+        },
+        getResponses: function () {
+          return [
+            new LT.Response("Take it", "Pocket the purse.", "place.DOMINION_STREET", function () {
+              if (typeof LT.incrementMoney === "function") LT.incrementMoney(25);
+            }),
+            new LT.Response("Leave it", "Walk on.", "place.DOMINION_STREET"),
+            new LT.Response("Wait", "See if the owner comes back.", "my.streetEvent.wait"),
+          ];
+        },
+      });
+
+      LT.defineNode({
+        id: "my.streetEvent.wait",
+        ui: "dialogue",
+        title: "A dropped purse",
+        secondsPassed: 120,
+        travelDisabled: true,
+        chrome: { left: true, right: true },
+        getContent: function () {
+          return "<p>A flustered dog-girl jogs up, spots the purse, and thanks you breathlessly.</p>";
+        },
+        getResponses: function () {
+          return [new LT.Response("Continue", "Let her go.", "place.DOMINION_STREET")];
+        },
+      });
+    })();
+
+weight is the official-style chance slice. Street storm attacks use
+15. Keep yours small unless you want it common.
+
+For alley-style "this tile keeps its NPC":
+
+    Read js/content/alleys.js (persistAlleyNpc, generateAlleyMugger).
+    Give your NPC a unique id, store them on LT.game.npcs, set
+    location to the current tile, and look them up before spawning
+    a new one.
+
+To start combat or sex from the event, push a ResponseCombat or
+ResponseSex as in sections 4.6 / 4.7.
+
+======================================================================
+13. Recipe: combat modification
+======================================================================
+
+Where to look:
+    Damage numbers and typed hits     js/combat/damage.js, attack.js
+    The turn / AP / Reset             js/combat/combat.js
+    Player moves                      js/combat/moves.js
+    Teases                            js/combat/tease.js
+    Spells                            js/combat/spells.js
+    Fight UI                          js/content/combatNodes.js
+    Weapons                           js/items/weapons.js
+
+Add a move (advanced):
+
+    Push onto whatever array moves.js iterates, or wrap
+    the function that builds the Fight tab responses in
+    combatNodes.js the same way we wrap getResponses.
+
+Change incoming damage:
+
+    var old = LT.applyTypedDamage;
+    LT.applyTypedDamage = function (target, amount, type) {
+      if (target && target.player && LT.game.flags.myShield) amount = Math.floor(amount * 0.5);
+      return old(target, amount, type);
+    };
+
+Add a weapon:
+
+    Read a weapon object in js/items/weapons.js and assign a new key
+    on the same table from your JS. Then LT.addItem the weapon id, or
+    soldBy it through a shop if that shop sells weapons (Vicky).
+
+Start a custom fight from any node:
+
+    new LT.Response("Fight", "Stand your ground.", null, function () {
+      var fight = LT.ResponseCombat("Fight", "Fight them.", {
+        enemy: LT.game.npcs.myNpc,
+        victoryNode: "my.win",
+        defeatNode: "my.lose",
+        returnNode: "place.DOMINION_STREET",
+        escapeChance: 20,
+      });
+      fight.effects();
+    })
+
+Beginner: Replace a single function in combat.js (for example the
+flee chance). Advanced: wrap the function so other mods can wrap it
+too.
+
+    var oldFlee = LT.combat.tryEscape;
+    LT.combat.tryEscape = function () {
+      if (LT.game.flags.myCowardBoots) return true;
+      return oldFlee.apply(this, arguments);
+    };
+
+(Check the real function name in combat.js before you wrap it.
+Names above are the idea, not a guarantee.)
+
+======================================================================
+14. Recipe: sex modification
+======================================================================
+
+js/sex/sex.js is the kernel. Actions are registered into LT.SEX_ACTIONS.
+Partner AI is LT.sex.pickPartnerAction.
+
+Add an action from your JS by copying a register({...}) block from
+sex.js and calling the same register pattern if it is exported. If
+register is not on LT, either:
+
+    - wrap LT.sex.availableActions to concat your acts, or
+    - Replace the smallest slice of sex.js that calls register, to
+      also call a LT.myModRegisterSex hook you define first.
+
+Start sex from a node with LT.ResponseSex as in 4.7.
+
+Do not Replace the entire sex.js. It is large and every other sex
+mod will die.
+
+======================================================================
+15. Recipe: HUD, options, phone
+======================================================================
+
+Left HUD: js/ui/menus/attributes.js
+Characters Present: js/ui/menus/charactersPresent.js
+Phone: js/ui/menus/phone.js
+Options: js/content/options.js + js/engine/properties.js
+
+Add an option:
+
+    LT.ensureProperties().myCoolOption = LT.ensureProperties().myCoolOption !== false;
+    // then wrap the options page getContent to draw a toggle, and
+    // handle a data-act in options.js the same way existing toggles
+    work. Or add a Phone node that sets the flag.
+
+Add a Phone button:
+
+    var phone = LT.getNode("phone.menu");
+    var old = phone.getResponses;
+    phone.getResponses = function () {
+      var list = old.call(this) || [];
+      list.push(new LT.Response("My Mod", "Open my mod menu.", "my.modMenu"));
+      return list;
+    };
+
+CSS:
+
+    Add Content [css/theme.css]:
+    .my-mod-note { color: #ff8cb3; font-style: italic; }
+
+======================================================================
+16. Recipe: weather, time, statuses
+======================================================================
+
+    LT.game.secondsPassed
+    LT.advanceTime(seconds)          via game.advanceTime
+    LT.hourOfDay()
+    LT.isWorkTime()                  06:00–22:00
+    LT.isArcaneStorm()
+    LT.applySleepEffect(ch, extraMinutes)
+    LT.addStatusEffect / hasStatusEffect / removeStatusEffect
+        in js/character/statusEffects.js
+
+Official WELL_RESTED is applied by Rest / Sleep in house.js.
+
+======================================================================
+17. Saves
+======================================================================
+
+js/engine/save.js writes the player, flags, and selected NPCs.
+
+If your mod adds a unique NPC with an id on LT.game.npcs, they will
+usually come back on load if they look like other unique NPCs. If
+they disappear, read save.js and either:
+
+    - store the extra data on LT.game.flags, or
+    - wrap the serialize / restore functions to include your fields.
+
+Never assume a wrapped function exists after a Restore + no Apply.
+Your JS is only in the game after a successful boot.js hook.
+
+======================================================================
+18. Characters Present and contacts
+======================================================================
+
+npcAtCurrentTile (js/character/npcs.js) lists:
+
+    - unique NPCs whose location matches the player's tile
+    - the active sex partner, even with no location
+    - alley occupants stored on that tile
+
+markCharacterEncountered(id) adds them to Phone > Contacts.
+namedCharacterIds() is what the Contacts page reads. Alley ids
+(alley_*) and clubber_* ids are excluded on purpose.
+
+======================================================================
+19. A full tiny mod, start to finish
+======================================================================
+
+mods/sweetTea/sweetTea.mod
+--------------------------
+    Name: Sweet Tea
+    Author: You
+    Description: Ralph sells a cup of tea. That is the whole mod.
+    Category: Items
+    Version: 1.0.0
+    Game Version: 0.38.0
+
+    Add Boot:
+    "mods/sweetTea/sweetTea.js"
+
+    Add Javascript [mods/sweetTea/sweetTea.js]:
+    (function () {
+      if (!LT.ITEMS) return;
+      LT.ITEMS.my_mod_tea = {
+        id: "my_mod_tea",
+        kind: "food",
+        name: "sweet tea",
+        value: 12,
+        soldBy: ["ralph"],
+        description: "A paper cup of sweet tea, still warm.",
+      };
+    })();
+
+The live file is mods/sweetTea/sweetTea.mod. Inventory currently
+draws consumable (and a few other kinds), so that copy uses
+kind: "consumable" so the cup appears in your bag after you buy
+it. soldBy is still the only shop hook.
+
+If your .mod needs another .mod (for example a sex add-on that
+hooks Pets and Animals), put this above the first Add Boot:
+
+    Depends On: KittyPetsAndAnimals.mod
+
+KittyLoader turns that row red until the required mod is enabled,
+warns when you turn it on or Apply, and applies the required mod
+first so its JS is already on the page.
+
+Enable it in KittyLoader, Apply, reload, walk to Ralph's Snacks,
+Trade. The tea is there because shopItemIds("ralph") includes any
+item with soldBy ralph.
+
+No core shop file was touched.
+
+======================================================================
+20. Debugging
+======================================================================
+
+- Browser console (F12) is your friend. Unknown dialogue node: id
+  means setContent was called with a node you never defineNode'd,
+  or your JS loaded after the click.
+
+- UtilText unseen: foo.bar in the console means a parse token has
+  no resolver yet. Add the NPC, or add a case in utilText.js only
+  if you must.
+
+- mods/logs/FailsPatchLog.txt is why a Replace did nothing.
+
+- If travel dies and the map will not click, a node left
+  travelDisabled: true and then crashed. setContent now falls
+  back, but your own nodes should set travelDisabled: false
+  unless the player is mid-event.
+
+- Keep LT.VERSION in mind. Official public zip is still 0.37.1;
+  this rebuild stays on its own LT.VERSION until a public zip
+  ships. Put that number in Game Version: so players know.
+
+======================================================================
+21. What not to do
+======================================================================
+
+- Do not invent official Innoxia story, numbers, or characters.
+  Your original content is fine. Fake "official" quests are not.
+
+- Do not ship a whole patched js/ folder as a "mod".
+
+- Do not Replace all of sex.js, combat.js, utilText.js, or
+  allGrids.js. Wrap, append, or replace five lines.
+
+- Do not store progress on a random global. Use LT.game.flags.
+
+- Do not give every unique NPC you ensure() a location on the
+  player's tile, or Contacts / Characters Present will fill with
+  people the player has never met.
+
+======================================================================
+22. Where to look when you are stuck
+======================================================================
+
+"I want to do X, which official file already does X?"
+
+    Add a button to a shop            shoppingArcade.js, arcadeShops.js
+    Add a person on a tile            npcs.js location + defineNode
+    Add a random street event         encounters.js
+    Add an alley occupant             alleys.js
+    Add a fight                       ResponseCombat, combatNodes.js
+    Add sex                           ResponseSex, sex.js
+    Add an item / shop stock          items.js soldBy
+    Add a weapon                      weapons.js
+    Add clothing                      clothing.js
+    Add a room in Lilaya's house      house.js, houseManage.js, allGrids
+    Add a new map                     allGrids + enterWorld + place. nodes
+    Add a storm rule                  weather.js, encounters.js
+    Add a status                      statusEffects.js
+    Add a Phone page                  phone.js
+    Add a Mod Menu page               LT.registerModMenu / LT.injectModMenuHtml
+                                      in js/engine/modMenu.js
+    React to walking                  LT.onWalk in roam.js
+    Add an option                     options.js, properties.js
+    Change HUD                        attributes.js, theme.css
+    Parse new [tokens]                utilText.js  (core replace; last resort)
+    Save extra data                   save.js or flags
+
+Open the official file. Find the smallest function. Wrap it from
+your JS. If you cannot wrap it, Replace only that function.
+
+That is the whole method.
+
+======================================================================
+23. Live example mods in this folder
+======================================================================
+
+The recipes above are also sitting in mods/ as working
+KittyPatcher mods. Enable them in KittyLoader, Apply, reload,
+then open Phone > Example Mods.
+
+    mods/examples/exampleHub.mod         Phone directory (section 15)
+    mods/sweetTea/sweetTea.mod           Item + Ralph shop (10, 19)
+    mods/examples/ralphTeaTalk.mod       Wrap an existing NPC (7)
+    mods/examples/miraQuest.mod          Custom NPC, quest, journal (8-10)
+    mods/examples/cellarHatch.mod        New grid + street hatch (11)
+    mods/examples/streetPurse.mod        Street encounter table (12)
+    mods/examples/teaShield.mod          Combat wrap (13)
+    mods/examples/exampleSexAction.mod   Extra Sex-tab action (14)
+
+    mods/examples/README.txt             What to turn on, and where
+                                         to stand
+
+They are original demo content, not official Innoxia story.
+They all use Add Boot + Add Javascript. None of them Replace
+the "js/main.js" line.
+
+Suggested first run: enable Example Mods Hub and Sweet Tea,
+Apply, start or continue a game, Phone > Example Mods > Go to
+Ralph, Trade, buy sweet tea.

@@ -16,9 +16,15 @@
     LT.initTimeListener();
     LT.bindCreationClicks();
     document.addEventListener("lt-content", function () {
-      if (LT.game.renderAttributes) {
+      var inSex = !!(LT.sex && LT.sex.active);
+      if (LT.game.renderAttributes || inSex) {
         LT.openUI("attributes", { target: "left" });
         LT.paintAttributes();
+      }
+      if (inSex) {
+        LT.openUI("characters-present", { target: "right" });
+        if (typeof LT.paintSexChrome === "function") LT.paintSexChrome();
+        return;
       }
       if (LT.game.renderMap) {
         if (typeof declareGridVariables === "function") declareGridVariables();
@@ -28,8 +34,12 @@
         if (typeof LT.paintCharactersPresent === "function") LT.paintCharactersPresent();
       }
     });
-    LT.setChrome({ left: false, right: false });
-    LT.game.setContent("boot.disclaimer");
+    function start() {
+      LT.setChrome({ left: false, right: false });
+      LT.game.setContent("boot.disclaimer");
+    }
+    if (typeof LT.refreshAppliedMods === "function") LT.refreshAppliedMods(start);
+    else start();
   }
 
   window.openUI = LT.openUI;

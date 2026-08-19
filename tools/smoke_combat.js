@@ -89,6 +89,18 @@ LT.combat.queue("strike");
 LT.combat.queue("strike");
 assert(LT.combat.player.remainingAP === 1, "Two Strikes spend 2 AP");
 assert(LT.combat.predictions(LT.combat.player).length === 2, "Two predictions are queued");
+var fightMenu = LT.getNode("combat.fight").getResponses(LT.game, 0);
+var resetBtn = fightMenu.filter(function (r) { return r && r.title === "Reset"; })[0];
+assert(resetBtn && resetBtn._index === 14, "Reset is official combat slot 14");
+assert(!resetBtn.disabled, "Reset is available after moves are queued");
+resetBtn.effects();
+assert(LT.combat.player.selectedMoves.length === 0, "Reset clears queued moves");
+assert(LT.combat.player.remainingAP === 3, "Reset refunds AP for this turn");
+var emptyReset = LT.getNode("combat.fight").getResponses(LT.game, 0).filter(function (r) { return r && r.title === "Reset"; })[0];
+assert(emptyReset && emptyReset.disabled, "Reset is disabled when no moves are queued");
+LT.combat.queue("strike");
+LT.combat.queue("strike");
+assert(LT.combat.player.remainingAP === 1, "Moves can be queued again after Reset");
 
 var hpBefore = LT.combat.enemy.health;
 LT.combat.endTurn();

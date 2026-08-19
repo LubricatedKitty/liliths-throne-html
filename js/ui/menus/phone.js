@@ -40,6 +40,21 @@
       name: "The search for Arthur; The Great Escape",
       text: "It turns out that Arthur was sold to an extremely dangerous demon called Zaranix, who lives in Demon Home. You'll need to travel to demon home and rescue Arthur!",
     },
+    MAIN_1_I_ARTHURS_TALE: {
+      line: "Lilith's Throne",
+      name: "The search for Arthur; Conclusion",
+      text: "Now that you've rescued Arthur from the clutches of Zaranix, you should travel back to Lilaya's home and get the full story of what happened from him.",
+    },
+    MAIN_1_J_ARTHURS_ROOM: {
+      line: "Lilith's Throne",
+      name: "The search for Arthur; A room of his own",
+      text: "Lilaya really doesn't want Arthur in her lab, and has tasked you to help Rose find a suitable room for him to stay in.<br/><i>Go into one of the empty rooms in Lilaya's House, and through the room management window, upgrade it to 'Arthur's Room'.</i>",
+    },
+    MAIN_2_A_INTO_THE_DEPTHS: {
+      line: "Lilith's Throne",
+      name: "Into Submission",
+      text: "Arthur was able to explain the mechanism by which you were transported into this new world, but he seemed to hold back on some of the details. He said that he'd explain everything fully once he knew for certain what was going on, but in order for that to happen, he'll need to talk to one of the seven elder Lilin. After much arguing, Lilaya agreed to convince her mother to help, but you'll have to be the one to deliver the message.<br/><i>Travel down into the undercity of Submission and seek an audience with Lilaya's mother, Lyssieth.</i>",
+    },
   };
 
   var SIDE_QUESTS = {
@@ -67,6 +82,76 @@
       line: "Pregnancy",
       name: "Lilaya the midwife",
       text: "Lilaya said that she'd be able to help you give birth whenever you're ready. You're going to need to wait until your belly has finished growing, then you can go and see Lilaya to give birth.",
+    },
+    HARPY_PACIFICATION_ONE: {
+      line: "Angry Harpies",
+      name: "Nests in chaos",
+      text: "The Enforcer informed you that the Harpy Nests are extremely dangerous at the moment. Upon further questioning, you discovered that there's a hefty reward for the person who's able to calm the three main matriarchs down.",
+    },
+    HARPY_PACIFICATION_TWO: {
+      line: "Angry Harpies",
+      name: "One down, two to go",
+      text: "You've managed to reign in one of the matriarchs, but there are still two more to go!",
+    },
+    HARPY_PACIFICATION_THREE: {
+      line: "Angry Harpies",
+      name: "One matriarch left",
+      text: "You've managed to reign in two of the matriarchs, but there's still one more to go!",
+    },
+    HARPY_PACIFICATION_REWARD: {
+      line: "Angry Harpies",
+      name: "Harpy queen",
+      text: "Return to the Enforcer post to report your success.",
+    },
+    ROMANCE_HELENA_1_OFFER_HELP: {
+      line: "Her Highness's Helper",
+      name: "Offer to help",
+      text: "After asking Helena about her business, you discovered that she's barely managing to keep the place running. After expressing her desire to make some improvements to her shop, Helena revealed that she simply doesn't have the time nor inclination to do the work herself. Perhaps you could offer her your help?",
+    },
+    ROMANCE_HELENA_2_PURCHASE_PAINT: {
+      line: "Her Highness's Helper",
+      name: "Purchase Paint",
+      text: "Helena wants the entire exterior of her shop repainted. Travel to Argus's DIY Depot south of Slaver Alley, next to the canal, and buy a can of 'Purple-star' branded golden paint.",
+    },
+    ROMANCE_HELENA_3_A_EXTERIOR_DECORATOR: {
+      line: "Her Highness's Helper",
+      name: "Exterior Decorator (1/3)",
+      text: "Having purchased the golden paint, you returned to Helena only to have her demand that you get started on repainting the exterior of her shop as soon as possible...",
+    },
+    ROMANCE_HELENA_3_B_EXTERIOR_DECORATOR: {
+      line: "Her Highness's Helper",
+      name: "Exterior Decorator (2/3)",
+      text: "You need to return to Helena's store during opening hours to see what your next task will be...",
+    },
+    ROMANCE_HELENA_3_C_EXTERIOR_DECORATOR: {
+      line: "Her Highness's Helper",
+      name: "Exterior Decorator (3/3)",
+      text: "You need to return to Helena's store during opening hours to see what your next task will be...",
+    },
+    ROMANCE_HELENA_4_SCARLETTS_RETURN: {
+      line: "Her Highness's Helper",
+      name: "Scarlett's Return",
+      text: "Helena needs Scarlett back as her personal assistant. If you freed her, find her in Helena's nest. If you kept her, bring her to the shop.",
+    },
+    ROMANCE_HELENA_5_SCARLETT_TRAINER: {
+      line: "Her Highness's Helper",
+      name: "Harpy Helper",
+      text: "The two harpies left early to visit Scarlett's sister. Return to Helena's store during opening hours.",
+    },
+    ROMANCE_HELENA_6_ADVERTISING: {
+      line: "Her Highness's Helper",
+      name: "Advertising",
+      text: "Put the enchanted posters up at the entrance of Slaver Alley in order to help advertise Helena's store.",
+    },
+    ROMANCE_HELENA_7_GRAND_OPENING_PREPARATION: {
+      line: "Her Highness's Helper",
+      name: "Preparing for the Grand Opening",
+      text: "Get things ready for tomorrow's grand opening, which means working through the night...",
+    },
+    ROMANCE_HELENA_8_FINISH: {
+      line: "Her Highness's Helper",
+      name: "Preparing Drinks",
+      text: "Helena has tasked you and Scarlett with staying in the back room and making drinks for the guests.",
     },
   };
 
@@ -111,7 +196,10 @@
         (function () {
           var r = new LT.Response("Wait", "Pass time where you are.", "phone.wait");
           if (!LT.game.started || !LT.game.player) r.disable("You need to be in the game first.");
-          if (LT.game.currentNode && LT.game.currentNode.travelDisabled) r.disable("You can't wait here.");
+          if (LT.game.currentNode && LT.game.currentNode.travelDisabled) {
+            var locked = LT.game.currentNode.travelDisabled;
+            if (typeof locked !== "function" || locked()) r.disable("You can't wait here.");
+          }
           return r;
         })(),
         (function () {
@@ -122,6 +210,10 @@
           });
         })(),
         new LT.Response("Contacts", "People you have met, and their portraits.", "phone.contacts"),
+        new LT.Response("Mod Menu", "Configure installed mods.", null, function () {
+          if (typeof LT.openModMenu === "function") LT.openModMenu("phone.menu");
+          else LT.game.setContent("boot.mod-menu");
+        }),
         (function () {
           var r = new LT.Response("Transform", "Transform your body.", "body.core", function () {
             LT.bodyChangingTarget = LT.game.player;
@@ -175,6 +267,25 @@
       var pregId = LT.game.flags && LT.game.flags.pregnancyQuest;
       var preg = SIDE_QUESTS[pregId];
       if (preg) html += block(preg);
+      var helenaId = LT.game.flags && LT.game.flags.helenaRomance;
+      if (helenaId && helenaId !== "complete" && helenaId !== "failed") {
+        var helenaQ = SIDE_QUESTS[helenaId];
+        if (helenaQ) html += block(helenaQ);
+      }
+      var harpyId = LT.game.flags && LT.game.flags.harpyQuest;
+      if (harpyId && harpyId !== "complete") {
+        var harpy = SIDE_QUESTS[harpyId];
+        if (harpy) {
+          if (harpyId === "HARPY_PACIFICATION_REWARD") {
+            harpy = {
+              line: harpy.line,
+              name: LT.game.player && LT.game.player.isFeminine && LT.game.player.isFeminine() ? "Harpy queen" : "Harpy king",
+              text: harpy.text,
+            };
+          }
+          html += block(harpy);
+        }
+      }
       if (!html) return "<p class='muted'>You don't have any active quests.</p>";
       return html;
     },
@@ -228,18 +339,11 @@
     getContent: function () {
       var p = LT.game.player;
       if (!p) return "<p>Nobody to photograph.</p>";
+      if (typeof LT.getCharacterInformationScreen === "function") return LT.getCharacterInformationScreen(p, { perkTree: true });
       return (
         "<p>You hold the phone out and take a picture of yourself.</p>" +
         (typeof LT.portraitHtml === "function" ? LT.portraitHtml("player") : "") +
-        "<div class='container-full-width'><p><b style='color:" +
-        (p.getGenderColour ? p.getGenderColour() : "#ddd") +
-        ";'>" +
-        p.getName() +
-        "</b> · Level " +
-        (p.level || 1) +
-        " Human</p>" +
-        (p.describeBody ? p.describeBody() : "") +
-        "</div>"
+        (p.describeBody ? p.describeBody() : "")
       );
     },
     getResponses: function () {
@@ -247,7 +351,7 @@
         new LT.Response("Back", "Return to the phone.", "phone.menu"),
         new LT.Response(
           typeof LT.getCharacterImage === "function" && LT.getCharacterImage("player") ? "Change image" : "Set image",
-          "Attach a portrait from an image link.",
+          "Attach a portrait from a file inside the game folder.",
           "house.image",
           function () {
             LT.game.flags.imageTarget = "player";
@@ -296,8 +400,15 @@
     title: "Contacts",
     chrome: { left: true, right: true },
     getContent: function () {
+      var viewed = LT.game.flags && LT.game.flags.contactNpcId;
+      if (viewed) {
+        var ch = viewed === "player" ? LT.game.player : LT.game.npcs && LT.game.npcs[viewed];
+        if (ch && typeof LT.getCharacterInformationScreen === "function") {
+          return LT.getCharacterInformationScreen(ch, { perkTree: true });
+        }
+      }
       var ids = typeof LT.namedCharacterIds === "function" ? LT.namedCharacterIds() : ["player"];
-      var html = "<p>Set or change a portrait by pasting an http(s) image link. Only the link is saved.</p>";
+      var html = "<p>Even though you can't call anyone, you've kept a record of the people you've come into contact with.</p>";
       var i;
       for (i = 0; i < ids.length; i++) {
         var id = ids[i];
@@ -305,7 +416,9 @@
         var npc = LT.game.npcs && LT.game.npcs[id];
         if (npc && npc.getName) name = npc.getName();
         html +=
-          "<div class='container-full-width contact-card'>" +
+          "<div class='container-full-width contact-card' data-tip-char='" +
+          id.replace(/'/g, "") +
+          "'>" +
           (typeof LT.portraitHtml === "function" ? LT.portraitHtml(id, "char-portrait-small") : "") +
           "<p><b>" +
           name +
@@ -314,20 +427,30 @@
       return html;
     },
     getResponses: function () {
-      var list = [new LT.Response("Back", "Return to the phone.", "phone.menu")];
+      var viewed = LT.game.flags && LT.game.flags.contactNpcId;
+      var list = [
+        new LT.Response("Back", viewed ? "Return to your contacts." : "Return to the phone.", viewed ? "phone.contacts" : "phone.menu", function () {
+          if (viewed) delete LT.game.flags.contactNpcId;
+        }),
+      ];
       var ids = typeof LT.namedCharacterIds === "function" ? LT.namedCharacterIds() : ["player"];
       var i;
-      for (i = 0; i < ids.length && i < 12; i++) {
+      for (i = 0; i < ids.length && i < 14; i++) {
         (function (id) {
-          var label = id === "player" ? "Your image" : id;
-          var npc = LT.game.npcs && LT.game.npcs[id];
-          if (npc && npc.getName) label = npc.getName();
-          list.push(
-            new LT.Response(label, "Set or change this portrait.", "house.image", function () {
-              LT.game.flags.imageTarget = id;
-              LT.game.flags.imageBack = "phone.contacts";
-            }),
+          var ch = id === "player" ? LT.game.player : LT.game.npcs && LT.game.npcs[id];
+          var label = id === "player" ? (ch && ch.getName ? ch.getName() : "You") : (ch && ch.getName ? ch.getName() : id);
+          var looking = viewed === id;
+          var r = new LT.Response(
+            label,
+            looking ? "You are already looking at " + label + "!" : "Take a detailed look at what " + label + " looks like.",
+            "phone.contacts",
+            function () {
+              LT.game.flags.contactNpcId = id;
+              if (ch && typeof LT.ensureAppearance === "function") LT.ensureAppearance(ch);
+            },
           );
+          if (looking) r.disable("You are already looking at " + label + "!");
+          list.push(r);
         })(ids[i]);
       }
       return list;

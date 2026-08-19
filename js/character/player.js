@@ -77,6 +77,14 @@
     if (changed) this.applyHumanDefaults();
   };
 
+  GameCharacter.prototype.hasFetish = function (id) {
+    return !!(this.fetishes && this.fetishes[id]);
+  };
+
+  GameCharacter.prototype.hasPerk = function (id) {
+    return !!(this.perks && this.perks[id]);
+  };
+
   GameCharacter.prototype.hasPenis = function () {
     if (this.body && this.body.penis) return this.body.penis.type !== "NONE";
     if (this.penisPresent != null) return !!this.penisPresent;
@@ -277,6 +285,7 @@
   LT.refreshVitals = function (ch, fill) {
     if (!ch) return ch;
     var prevMax = ch.maxHealth || 0;
+    var prevMaxMana = ch.maxMana || 0;
     ch.maxHealth = LT.maxHealthOf(ch);
     ch.maxMana = LT.maxManaOf(ch);
     ch.experienceForLevel = LT.experienceNeeded(ch.level || 1);
@@ -284,8 +293,27 @@
     else if (ch.maxHealth > prevMax) ch.health += ch.maxHealth - prevMax;
     if (ch.health > ch.maxHealth) ch.health = ch.maxHealth;
     if (ch.health < 0) ch.health = 0;
-    if (fill || ch.mana == null || ch.mana > ch.maxMana) ch.mana = ch.maxMana;
+    if (fill || ch.mana == null) ch.mana = ch.maxMana;
+    else if (ch.maxMana > prevMaxMana) ch.mana += ch.maxMana - prevMaxMana;
+    if (ch.mana > ch.maxMana) ch.mana = ch.maxMana;
+    if (ch.mana < 0) ch.mana = 0;
     return ch;
+  };
+
+  LT.incrementHealth = function (ch, amount) {
+    if (!ch) return 0;
+    if (typeof LT.refreshVitals === "function") LT.refreshVitals(ch);
+    var before = ch.health || 0;
+    ch.health = Math.max(0, Math.min(ch.maxHealth || 0, before + (amount || 0)));
+    return ch.health - before;
+  };
+
+  LT.incrementMana = function (ch, amount) {
+    if (!ch) return 0;
+    if (typeof LT.refreshVitals === "function") LT.refreshVitals(ch);
+    var before = ch.mana || 0;
+    ch.mana = Math.max(0, Math.min(ch.maxMana || 0, before + (amount || 0)));
+    return ch.mana - before;
   };
 
   LT.incrementExperience = function (amount) {

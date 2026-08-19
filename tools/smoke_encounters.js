@@ -45,6 +45,8 @@ function load(rel) {
   "js/items/weapons.js",
   "js/items/weaponRuntime.js",
   "js/items/items.js",
+  "js/engine/properties.js",
+  "js/engine/preferences.js",
   "js/engine/game.js",
   "js/combat/attack.js",
   "js/combat/moves.js",
@@ -160,6 +162,9 @@ var harpy = LT.generateHarpyAttacker({ feminine: true, level: 3 });
 assert(harpy.raceName === "harpy", "Harpy attacker is a harpy");
 assert(harpy.level === 3, "Harpy level is applied");
 assert(harpy.level >= 2 && harpy.level <= 5, "Default harpy band is 2–5");
+assert(harpy.gender && harpy.gender.feminine, "Explicit feminine harpy stays feminine");
+var randomHarpy = LT.generateHarpyAttacker({ level: 2 });
+assert(randomHarpy.raceName === "harpy", "Preference-rolled harpy attacker stays a harpy");
 
 var hOpen = LT.parseFromXML("encounters/dominion/harpyAttack", "HARPY_ATTACK");
 assert(hOpen.indexOf("swoops down") >= 0 || hOpen.indexOf("blocking your path") >= 0, "Harpy attack XML present");

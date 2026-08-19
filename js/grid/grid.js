@@ -289,6 +289,7 @@
         if (!tile) continue;
         var isPlayer = px === col && py === row;
         var adjacent = (Math.abs(col - px) === 1 && row === py) || (Math.abs(row - py) === 1 && col === px);
+        var fogged = typeof LT.isTileDiscovered === "function" && !LT.isTileDiscovered(grid.gridName, col, row);
         var placeType = tile.location && tile.location.placeType;
         var knownVisual = !!(window.LT && LT.placeVisuals && placeType && LT.placeVisuals[placeType]);
         var visual = (window.LT && LT.placeVisual && placeType) ? LT.placeVisual(placeType) : null;
@@ -297,17 +298,19 @@
         if (!tile.isNavigable) classes += " blank";
         else if (isPlayer) classes += " player";
         if (tile.isNavigable && adjacent) classes += " movement";
-        if (tile.isNavigable && typeof LT !== "undefined" && LT.isDangerousTile && LT.isDangerousTile(placeType)) {
+        if (tile.isNavigable && !fogged && typeof LT !== "undefined" && LT.isDangerousTile && LT.isDangerousTile(placeType)) {
           classes += " dangerous";
         }
+        if (fogged && tile.isNavigable && !isPlayer) classes += " fog";
         tileDiv.className = classes;
         var bg = (knownVisual && visual && visual.background)
           || (tile.location && tile.location.color)
           || (visual && visual.background)
           || "#bbbbbb";
+        if (fogged && tile.isNavigable && !isPlayer) bg = "#151518";
         if (tile.isNavigable && bg) tileDiv.style.backgroundColor = bg;
         var iconSrc = (tile.location && tile.location.icon && tile.location.icon.src) || (visual && visual.icon);
-        if (tile.isNavigable && iconSrc) {
+        if (tile.isNavigable && iconSrc && !fogged) {
           var placeIcon = document.createElement("div");
           placeIcon.className = "place-icon";
           var content = document.createElement("div");
@@ -463,6 +466,9 @@
     grid.locations = collectLocationsFromGrid(newGrid);
     window.selectedTile = grid.gridData[tilePosition.y] && grid.gridData[tilePosition.y][tilePosition.x];
     applyCurrentTileState();
+    if (typeof LT !== "undefined" && typeof LT.discoverAround === "function") {
+      LT.discoverAround(grid.gridName, tilePosition.x, tilePosition.y);
+    }
     renderGrid();
     updateInfo();
     if (typeof grid.onLoad === "function") grid.onLoad(getCurrentTile(), grid);
@@ -518,7 +524,13 @@
   window.generateGrid = generateGrid;
 
   function travelLocked() {
-    if (window.LT && LT.game && LT.game.currentNode && LT.game.currentNode.travelDisabled) return true;
+    if (window.LT && LT.game && LT.game.currentNode && LT.game.currentNode.travelDisabled) {
+      if (typeof LT.game.currentNode.travelDisabled === "function") {
+        if (LT.game.currentNode.travelDisabled()) return true;
+      } else {
+        return true;
+      }
+    }
     if (window.LT && LT.combat && LT.combat.active) return true;
     if (window.LT && LT.sex && LT.sex.active) return true;
     return false;

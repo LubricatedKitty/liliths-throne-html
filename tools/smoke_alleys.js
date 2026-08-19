@@ -43,6 +43,8 @@ function load(rel) {
   "js/character/npcs.js",
   "js/items/weapons.js",
   "js/items/weaponRuntime.js",
+  "js/engine/properties.js",
+  "js/engine/preferences.js",
   "js/engine/game.js",
   "js/combat/attack.js",
   "js/combat/moves.js",
@@ -53,9 +55,11 @@ function load(rel) {
   "js/content/sexNodes.js",
   "js/text/dominionPlaces.js",
   "js/text/alleywayAttack.js",
+  "js/text/alleywayAttackSubmit.js",
   "js/text/prostitute.js",
   "js/content/world.js",
   "js/content/alleys.js",
+  "js/content/alleySubmit.js",
 ].forEach(load);
 
 var LT = context.LT;
@@ -71,7 +75,7 @@ assert(empty.indexOf("#IF") < 0 && empty.indexOf("[npc.") < 0, "Empty alley pars
 var dark = LT.parseFromXML("places/dominion/dominionPlaces", "DARK_ALLEYS");
 assert(dark.indexOf("very dangerous") >= 0, "Dark alley is marked very dangerous");
 
-var mugger = LT.generateAlleyMugger({ feminine: true, race: { id: "cat-morph", fem: "cat-girl", masc: "cat-boy" }, level: 2 });
+var mugger = LT.generateAlleyMugger({ feminine: true, prostitute: false, race: { id: "cat-morph", fem: "cat-girl", masc: "cat-boy" }, level: 2 });
 assert(mugger.getName() === "the cat-girl", "Unknown mugger is the cat-girl");
 assert(mugger.level === 2, "Mugger level is applied");
 assert(mugger.maxHealth === 10 + 10 + 2 * mugger.physique, "Mugger uses official HP");
@@ -139,6 +143,76 @@ assert(darkMugger.level === 4, "Dark alley muggers are higher level");
 if (darkMugger.mainWeapon) {
   assert(darkMugger.mainWeapon.id === "innoxia_crystal_rare", "Dark-alley demon below 8 uses a rare demonstone");
 }
+
+LT.resetGenderPreferences();
+LT.setGenderPreference("M_P_MALE", 0);
+LT.setGenderPreference("F_V_B_FEMALE", 10);
+LT.setGenderPreference("F_P_V_B_FUTANARI", 0);
+LT.setGenderPreference("F_P_TRAP", 0);
+var prefMugger = LT.generateAlleyMugger({ race: { id: "dog-morph", fem: "dog-girl", masc: "dog-boy" }, level: 1, prostitute: false });
+assert(prefMugger.gender.id === "F_V_B_FEMALE", "Mugger gender follows user gender preferences");
+assert(prefMugger.fullRace === "dog-girl", "Feminine preferred mugger uses the feminine race name");
+assert(prefMugger.orientation && prefMugger.orientation.id, "Mugger gets an orientation from racial weights");
+assert(typeof prefMugger.age === "number" && prefMugger.age >= 14, "Mugger age is rolled from age preferences");
+assert(prefMugger.fetishes && prefMugger.fetishes.length >= 1, "Mugger receives official fetish rolls");
+
+var nestHarpy = LT.pickEncounterRace({ gender: LT.Gender.F_V_B_FEMALE, includeHumanChance: false, pool: "harpy", fallback: LT.HUMAN_RACE });
+assert(nestHarpy.id === "harpy", "Harpy nest encounters still spawn harpies");
+var dominionRace = LT.pickEncounterRace({ gender: LT.Gender.F_V_B_FEMALE, includeHumanChance: false, pool: "dominion", fallback: LT.HUMAN_RACE });
+assert(dominionRace.id !== "harpy", "Dominion alleys do not spawn harpies");
+LT.setAllFurryPreferences("HUMAN");
+var allHumanDominion = LT.pickEncounterRace({ gender: LT.Gender.F_V_B_FEMALE, includeHumanChance: false, fallback: LT.HUMAN_RACE });
+assert(allHumanDominion.id !== "harpy", "ALL-HUMAN furry prefs do not dump harpies into Dominion");
+assert(allHumanDominion.id === "human", "ALL-HUMAN Dominion encounters fall back to human");
+var stillNestHarpy = LT.pickEncounterRace({ gender: LT.Gender.F_V_B_FEMALE, includeHumanChance: false, pool: "harpy", fallback: LT.HUMAN_RACE });
+assert(stillNestHarpy.id === "harpy", "ALL-HUMAN furry prefs do not disable official nest harpies");
+var i;
+for (i = 0; i < LT.SPAWN_SUBSPECIES.length; i++) {
+  LT.ensureProperties().furryFeminine[LT.SPAWN_SUBSPECIES[i].id] = "HUMAN";
+}
+var humanOnly = LT.pickEncounterRace({ gender: LT.Gender.F_V_B_FEMALE, includeHumanChance: false, fallback: LT.HUMAN_RACE });
+assert(humanOnly.id === "human", "If every subspecies is Disabled, race pick falls back to human");
+LT.resetFurryPreferences();
+
+var forcedHuman = 0;
+var n;
+for (n = 0; n < 80; n++) {
+  var rolled = LT.pickEncounterRace({ gender: LT.Gender.M_P_MALE, includeHumanChance: true });
+  if (rolled.id === "human") forcedHuman++;
+}
+assert(forcedHuman >= 0, "Human spawn rate is applied during race picks");
+
+var stayMugger = LT.generateAlleyMugger({ feminine: true, prostitute: false, race: { id: "cat-morph", fem: "cat-girl", masc: "cat-boy" }, level: 2 });
+stayMugger.attractedToPlayer = true;
+LT.persistAlleyNpc(stayMugger);
+assert(stayMugger.id.indexOf("alley_") === 0, "Spawned alley NPCs get unique ids");
+assert(LT.game.npcs[stayMugger.id] === stayMugger, "Spawned mugger is stored on the world NPC map");
+stayMugger.incrementPlayerSurrenderCount(1);
+stayMugger.incrementPlayerSurrenderCount(1);
+stayMugger.incrementPlayerSurrenderCount(1);
+stayMugger.encounteredBefore = true;
+assert(stayMugger.getPlayerSurrenderCount() === 3, "Three submissions are counted on that same NPC");
+LT.clearAlleyMugger();
+assert(LT.game.npcs[stayMugger.id] === stayMugger, "Leaving the scene does not delete the mugger from the tile");
+assert(LT.alleyOccupantsHere().some(function (n) { return n.id === stayMugger.id; }), "The same mugger is still occupying this alley tile");
+LT.game.npcs.alleyMugger = stayMugger;
+LT.game.npcs.npc = stayMugger;
+var demandText = LT.parseFromXML("encounters/dominion/alleywayAttack", "ALLEY_ATTACK_DEMAND_SUBMIT");
+assert(demandText.indexOf("bitch") >= 0, "Third submission uses the official demand-submit scene");
+assert(demandText.indexOf("[npc.") < 0 && demandText.indexOf("#IF") < 0, "Demand-submit text parsed");
+var submittedR = LT.alleySubmittedResponses(stayMugger);
+assert(submittedR.some(function (r) { return r && (r.title === "Bow down" || r.title === "Get spanked" || /Kiss/.test(r.title)); }), "Demand-submit offers a capitulation response");
+assert(submittedR.some(function (r) { return r && (r.title === "Refuse" || r.title === "Rebel"); }), "Demand-submit still allows refusing");
+stayMugger.incrementPlayerSurrenderCount(1);
+stayMugger.callsPlayer = "Bitch";
+stayMugger.playerCallsNpc = "Mistress";
+var owned = LT.parseFromXML("encounters/dominion/alleywayAttack", "ALLEY_ATTACK_SUBMITTED");
+assert(owned.indexOf("home") >= 0 || owned.indexOf("looking out") >= 0 || owned.indexOf("shady figure") >= 0, "After becoming their bitch, return visits use the submitted greeting");
+assert(LT.getNode("alley.submitted"), "Submitted scene node exists");
+assert(LT.getNode("alley.submitted-paid"), "Submitted pay-up node exists");
+assert(LT.getNode("alley.submitted-walkies"), "Submitted walkies node exists");
+assert(LT.getNode("alley.submitted-mugging"), "Submitted mugging node exists");
+assert(LT.getNode("alley.submitted-pimped"), "Submitted pimped-out node exists");
 
 if (fails.length) {
   console.error("\n" + fails.length + " failure(s)");

@@ -26,6 +26,7 @@
       "OFFICE",
       "SPA",
       "SPA_RECEPTIONIST",
+      "DINING_HALL",
     ];
   }
 
@@ -60,6 +61,12 @@
     if (LT.game.flags && LT.game.flags.workSex) {
       var rec = LT.findSlave(LT.game.flags.workSex);
       if (rec) html += LT.jobSexText(rec);
+    }
+    var greet = (typeof LT.slavesAtCurrentTile === "function" ? LT.slavesAtCurrentTile() : []).filter(function (s) {
+      return LT.getSlaveJob(s) === "BEDROOM" && LT.hasSlaveJobSetting(s, "BEDROOM", "BEDROOM_GREETING");
+    });
+    if (greet.length) {
+      html += "<p>" + greet.map(function (s) { return "<b>" + s.name + "</b>"; }).join(" and ") + " greet you as you enter.</p>";
     }
     return html;
   }
@@ -108,11 +115,16 @@
     if (LT.isEmptyHouseRoom && LT.isEmptyHouseRoom(place) && !up && can) {
       list.push(new LT.Response("Manage room", "Convert this empty room into slave quarters or a workplace.", "house.manage"));
     }
+    if (typeof LT.ensureDungeonCell === "function") LT.ensureDungeonCell();
     if (up) {
       list.push(new LT.Response("Occupancy", "Inspect this room and the people assigned here.", "house.occupancy"));
       if (up.id === "OFFICE") {
         list.push(new LT.Response("Occupancy ledger", "Review every slave and converted room in the house.", "house.ledger"));
       }
+    }
+    var pt = (LT.game.player && LT.game.player.location && LT.game.player.location.place) || "";
+    if (pt === "LILAYA_HOME_DUNGEON_CELL") {
+      list.push(new LT.Response("Occupancy", "House a slave in this dungeon cell.", "house.occupancy"));
     }
     if (place === "LILAYA_HOME_ROOM_PLAYER" && LT.ownedSlaves && LT.ownedSlaves().length) {
       list.push(new LT.Response("Your slaves", "Review the slaves registered to you.", "house.slaves"));
@@ -131,9 +143,13 @@
       return (
         "<p>Rose can have this empty room converted. Official prices:</p><ul>" +
         "<li><b>Slave's Room</b> — 2000. Houses one slave.</li>" +
+        "<li><b>Double Slave Room</b> — 3500. Houses two slaves. Can also upgrade an existing slave room.</li>" +
+        "<li><b>Quadruple Slave Room</b> — 6000. Houses four slaves. Can also upgrade a single or double slave room.</li>" +
+        "<li><b>Slave lounge</b> — 5000. Idle slaves with House Freedom may come here to relax.</li>" +
         "<li><b>Guest Room</b> — 2000. Houses one guest.</li>" +
         "<li><b>Office</b> — 8000. One office. Four workers. Occupancy ledger.</li>" +
         "<li><b>Milking Room</b> — 10000. Eight stalls.</li>" +
+        "<li><b>Dining Hall</b> — 6000. Waiters and waitresses serve here.</li>" +
         "<li><b>Spa</b> — 1500000. One only, cannot be removed.</li>" +
         "</ul><p>You have <b>£" +
         ((LT.game.player && LT.game.player.money) || 0) +
@@ -142,7 +158,7 @@
     },
     getResponses: function () {
       var list = [new LT.Response("Back", "Leave the room as it is.", backToRoom())];
-      var ids = ["SLAVE_ROOM", "GUEST_ROOM", "OFFICE", "MILKING_ROOM", "SPA"];
+      var ids = typeof LT.availableConvertIds === "function" ? LT.availableConvertIds() : ["SLAVE_ROOM", "GUEST_ROOM", "OFFICE", "MILKING_ROOM", "SPA"];
       var i;
       for (i = 0; i < ids.length; i++) {
         (function (id) {
@@ -155,9 +171,19 @@
             list.push(new LT.Response(title, blocked, null).disable(blocked));
           } else {
             list.push(
-              new LT.Response(title, "Pay " + up.cost + " flames to convert this room.", backToRoom(), function () {
-                LT.game.textStart = LT.convertRoom(id);
-              }),
+              new LT.Response(
+                title,
+                up.cost ? "Pay " + up.cost + " flames to convert this room." : "Convert this room.",
+                id === "ARTHUR_ROOM" ? "lab.arthurInstall" : backToRoom(),
+                function () {
+                  LT.game.textStart = LT.convertRoom(id);
+                  if (id === "ARTHUR_ROOM" && typeof LT.ensureArthur === "function") {
+                    var a = LT.ensureArthur();
+                    var loc = LT.game.player && LT.game.player.location;
+                    if (a && loc) a.location = { world: loc.world, place: "LILAYA_HOME_ARTHUR_ROOM", x: loc.x, y: loc.y };
+                  }
+                },
+              ),
             );
           }
         })(ids[i]);
@@ -177,14 +203,50 @@
     travelDisabled: true,
     chrome: { left: true, right: true },
     getContent: function () {
+      if (typeof LT.ensureDungeonCell === "function") LT.ensureDungeonCell();
       var up = LT.roomUpgradeAt();
       var html = up ? "<p>" + up.description + "</p>" : "<p>This room has not been converted.</p>";
+      if (up && up.extras) {
+        Object.keys(up.extras).forEach(function (id) {
+          if (LT.roomHasExtra(null, id)) html += "<p>" + up.extras[id].description + "</p>";
+        });
+      }
       var housed = LT.slavesInRoom(LT.currentRoomKey());
       if (!housed.length) html += "<p>No one is housed here.</p>";
       else {
         html += "<ul>";
         housed.forEach(function (s) {
           html += "<li><b>" + s.name + "</b> — " + LT.slaveJobName(s) + "</li>";
+        });
+        html += "</ul>";
+      }
+      if (up && up.id === "MILKING_ROOM") {
+        var tank = LT.milkingTank(LT.currentRoomKey());
+        if (tank) {
+          html +=
+            "<p>Stored fluids: <b>" +
+            (tank.milk || 0) +
+            "</b>ml milk, <b>" +
+            (tank.cum || 0) +
+            "</b>ml cum, <b>" +
+            (tank.girlcum || 0) +
+            "</b>ml girlcum.</p>";
+        }
+      }
+      if (up && up.id === "SLAVE_LOUNGE") {
+        var relaxing = LT.ownedSlaves().filter(function (s) {
+          var dest = LT.idleDestination(s);
+          return dest && dest.key === LT.currentRoomKey();
+        });
+        if (relaxing.length) {
+          html += "<p>Relaxing here: " + relaxing.map(function (s) { return "<b>" + s.name + "</b>"; }).join(", ") + ".</p>";
+        }
+      }
+      var events = typeof LT.slaveEvents === "function" ? LT.slaveEvents() : [];
+      if (events.length) {
+        html += "<p><b>Recent slave events</b></p><ul>";
+        events.slice(0, 4).forEach(function (ev) {
+          html += "<li>" + ev + "</li>";
         });
         html += "</ul>";
       }
@@ -195,7 +257,16 @@
       var up = LT.roomUpgradeAt();
       if (up && up.home) {
         LT.ownedSlaves().forEach(function (s) {
-          if (s.home === LT.currentRoomKey()) return;
+          if (s.home === LT.currentRoomKey()) {
+            list.push(
+              new LT.Response("Unhouse " + s.name, "Send " + s.name + " back to Slavery Administration.", "house.occupancy", function () {
+                s.home = "";
+                LT.placeSlave(s);
+                LT.game.textStart = "<p>" + s.name + " is no longer housed here.</p>";
+              }),
+            );
+            return;
+          }
           list.push(
             new LT.Response(
               "House " + s.name,
@@ -208,6 +279,61 @@
             ),
           );
         });
+      }
+      if (up) {
+        Object.keys(LT.HOUSE_UPGRADES).forEach(function (id) {
+          if (!LT.canUpgradeRoom(up.id, id)) return;
+          var next = LT.HOUSE_UPGRADES[id];
+          var title = next.name + " (" + next.cost + ")";
+          var blocked = LT.getMoney() < next.cost ? "You need " + next.cost + " flames." : "";
+          if (blocked) list.push(new LT.Response(title, blocked, null).disable(blocked));
+          else {
+            list.push(
+              new LT.Response(title, "Pay " + next.cost + " flames to expand this room.", "house.occupancy", function () {
+                LT.game.textStart = LT.convertRoom(id);
+              }),
+            );
+          }
+        });
+        if (up.extras) {
+          Object.keys(up.extras).forEach(function (id) {
+            var extra = up.extras[id];
+            if (LT.roomHasExtra(null, id)) {
+              list.push(
+                new LT.Response("Remove " + extra.name, extra.description, "house.occupancy", function () {
+                  LT.game.textStart = LT.removeRoomExtra(id);
+                }),
+              );
+              return;
+            }
+            var title = extra.name + " (" + extra.cost + ")";
+            var blocked = "";
+            if (extra.exclusive && LT.roomHasExtra(null, extra.exclusive)) {
+              blocked = "The '" + (up.extras[extra.exclusive] && up.extras[extra.exclusive].name) + "' upgrade must be removed first.";
+            }
+            if (!blocked && LT.getMoney() < extra.cost) blocked = "You need " + extra.cost + " flames.";
+            if (blocked) list.push(new LT.Response(title, blocked, null).disable(blocked));
+            else {
+              list.push(
+                new LT.Response(title, extra.description, "house.occupancy", function () {
+                  LT.game.textStart = LT.addRoomExtra(id);
+                }),
+              );
+            }
+          });
+        }
+        if (up.id === "MILKING_ROOM") {
+          var tank = LT.milkingTank(LT.currentRoomKey());
+          var stored = tank ? tank.milk + tank.crotchMilk + tank.cum + tank.girlcum : 0;
+          if (stored > 0) {
+            list.push(
+              new LT.Response("Sell fluids", "Sell all stored fluids from this milking room.", "house.occupancy", function () {
+                var pay = LT.sellMilkingTank(LT.currentRoomKey());
+                LT.game.textStart = "<p>You sell the stored fluids for <b>" + pay + "</b> flames.</p>";
+              }),
+            );
+          }
+        }
       }
       return list;
     },
@@ -365,7 +491,19 @@
         (LT.hasSlavePermission(s, "GENERAL_HOUSE_FREEDOM") ? "House freedom granted." : "Confined to assigned rooms.") +
         " " +
         (LT.hasSlavePermission(s, "SEX_INITIATE_PLAYER") ? "Allowed to use you for relief." : "Not allowed to initiate sex with you.") +
-        "</p>"
+        " " +
+        (LT.hasSlavePermission(s, "SEX_INITIATE_SLAVES") ? "May initiate sex with other slaves." : "") +
+        "</p>" +
+        (typeof LT.slaveEvents === "function" && LT.slaveEvents().length
+          ? "<p><b>Recent events</b></p><ul>" +
+            LT.slaveEvents()
+              .slice(0, 3)
+              .map(function (ev) {
+                return "<li>" + ev + "</li>";
+              })
+              .join("") +
+            "</ul>"
+          : "")
       );
     },
     getResponses: function () {
@@ -375,7 +513,7 @@
       list.push(new LT.Response("Jobs & hours", "Assign jobs to each hour of the day.", "house.job"));
       list.push(new LT.Response("Permissions", "Set official behaviour, general, and sex permissions.", "house.perms"));
       list.push(
-        new LT.Response(LT.getCharacterImage(s.id) ? "Change image" : "Set image", "Attach or replace a portrait URL.", "house.slave", function () {
+        new LT.Response(LT.getCharacterImage(s.id) ? "Change image" : "Set image", "Attach or replace a portrait from a file inside the game folder.", "house.slave", function () {
           var ok = LT.promptCharacterImage(s.id);
           LT.game.textStart = ok
             ? "<p>Portrait updated.</p>"
@@ -386,6 +524,10 @@
         list.push(
           LT.ResponseSex("Sex", "Use " + s.name + ".", {
             partner: LT.slaveAsNpc(s),
+            manager: (function () {
+              var up = typeof LT.roomUpgradeAt === "function" ? LT.roomUpgradeAt() : null;
+              return up && up.id === "MILKING_ROOM" ? "milking_stall" : "generic";
+            })(),
             consensual: true,
             playerDom: true,
             postSexNode: "house.slave",
@@ -480,6 +622,55 @@
       });
       html += "</div><p>Selected: <b style='color:" + (selJob.colour || "#ddd") + ";'>" + (s.feminine === false ? selJob.nameM : selJob.name) + "</b>. " + selJob.description + "</p>";
       html += "<p>" + LT.slaveHoursSummary(s) + "</p>";
+      var spec = LT.SLAVE_JOB_SETTINGS[selected];
+      if (spec) {
+        html += "<div class='cosmetics-inner-container full'><b>Job settings</b><br/>";
+        (spec.mutual || []).forEach(function (set) {
+          if ((set.id === "SPA_SAUNA" && !LT.findUpgradeKey("SPA")) || (set.id === "SPA_SAUNA" && !LT.roomHasExtra(LT.findUpgradeKey("SPA"), "SPA_SAUNA"))) {
+            /* still show; official greys them until built */
+          }
+          var on = LT.hasSlaveJobSetting(s, selected, set.id);
+          html +=
+            '<div data-act="jset:' +
+            selected +
+            ":" +
+            set.id +
+            '" class="cosmetics-button' +
+            (on ? " active" : "") +
+            '" style="color:' +
+            (set.colour || "#ddd") +
+            ';" title="' +
+            set.description.replace(/"/g, "'") +
+            '">' +
+            set.name +
+            "</div>";
+        });
+        if (spec.exclusive) {
+          Object.keys(spec.exclusive).forEach(function (groupName) {
+            html += "<p><i>" + groupName + "</i></p>";
+            spec.exclusive[groupName].forEach(function (set) {
+              var on = LT.hasSlaveJobSetting(s, selected, set.id);
+              html +=
+                '<div data-act="jsetx:' +
+                selected +
+                ":" +
+                groupName +
+                ":" +
+                set.id +
+                '" class="cosmetics-button' +
+                (on ? " active" : "") +
+                '" style="color:' +
+                (set.colour || "#ddd") +
+                ';" title="' +
+                set.description.replace(/"/g, "'") +
+                '">' +
+                set.name +
+                "</div>";
+            });
+          });
+        }
+        html += "</div>";
+      }
       return html;
     },
     getResponses: function () {
@@ -545,6 +736,18 @@
       LT.setSlavePermission(s, parts[1], parts[2]);
       return true;
     }
+    if (act.indexOf("jsetx:") === 0) {
+      var bits = act.split(":");
+      var spec = LT.SLAVE_JOB_SETTINGS[bits[1]];
+      var ids = spec && spec.exclusive && spec.exclusive[bits[2]] ? spec.exclusive[bits[2]].map(function (x) { return x.id; }) : [];
+      LT.setSlaveJobSetting(s, bits[1], bits[3], ids);
+      return true;
+    }
+    if (act.indexOf("jset:") === 0) {
+      var setBits = act.split(":");
+      LT.setSlaveJobSetting(s, setBits[1], setBits[2]);
+      return true;
+    }
     return false;
   }
 
@@ -570,8 +773,13 @@
       var id = (LT.game.flags && LT.game.flags.imageTarget) || "player";
       var url = LT.getCharacterImage(id);
       return (
-        "<p>Portraits are stored as a short http(s) link only. Image files are never written into the save.</p>" +
-        (url ? LT.portraitHtml(id) + "<p class='muted'>" + url + "</p>" : "<p>No image is set.</p>")
+        "<p>Portraits must be a file inside this game folder, such as <code>images/13-Morwyn Blackhorn.png</code>. Paths that leave the folder, or http(s) / data links, are refused.</p>" +
+        (url
+          ? (typeof LT.artworkHtml === "function" ? LT.artworkHtml(id) : LT.portraitHtml(id)) +
+            "<p class='muted'>" +
+            url +
+            "</p>"
+          : "<p>No image is set.</p>")
       );
     },
     getResponses: function () {
@@ -579,9 +787,11 @@
       var back = (LT.game.flags && LT.game.flags.imageBack) || "phone.menu";
       return [
         new LT.Response("Back", "Leave the portrait as it is.", back),
-        new LT.Response(LT.getCharacterImage(id) ? "Change image" : "Set image", "Paste an image URL.", "house.image", function () {
+        new LT.Response(LT.getCharacterImage(id) ? "Change image" : "Set image", "Set a portrait from a file inside the game folder.", "house.image", function () {
           var ok = LT.promptCharacterImage(id);
-          LT.game.textStart = ok ? "<p>Portrait updated.</p>" : "<p>Use an http or https image link, at most 400 characters. Data URLs are refused.</p>";
+          LT.game.textStart = ok
+            ? "<p>Portrait updated.</p>"
+            : "<p>Use a path inside this folder, such as images/name.png. Links and paths that leave the folder are refused.</p>";
         }),
         new LT.Response("Clear image", "Remove the saved link.", "house.image", function () {
           LT.setCharacterImage(id, "");

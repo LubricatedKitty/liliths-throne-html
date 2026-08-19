@@ -68,3 +68,22 @@ convert(
         "SEX_TOY_DISCOVERY",
     },
 )
+
+def dump_all(src, dest_key, dest_path):
+    xml = Path(src).read_text(encoding="utf-8")
+    out = {}
+    for m in re.finditer(r'<htmlContent tag="([^"]+)">\s*<!\[CDATA\[(.*?)\]\]>', xml, re.S):
+        tag, body = m.group(1), m.group(2)
+        if tag not in out:
+            out[tag] = body
+    Path(dest_path).write_text(
+        "LT.TEXT[" + json.dumps(dest_key) + "] = " + json.dumps(out, ensure_ascii=False) + ";\n",
+        encoding="utf-8",
+    )
+    print(dest_key, "tags", len(out), "kb", round(Path(dest_path).stat().st_size / 1024, 1))
+
+dump_all(
+    "Liliths Throne v0.4.10/res/txt/places/dominion/shoppingArcade/pixsPlayground.xml",
+    "places/dominion/shoppingArcade/pixsPlayground",
+    "Liliths Throne HTML/js/text/pixsPlayground.js",
+)

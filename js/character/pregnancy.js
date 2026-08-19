@@ -1,7 +1,9 @@
 (function () {
   var PREG_0_MIN_HOURS = 4;
   var PREG_0_EXTRA_HOURS = 5;
-  var PREGNANCY_DURATION_WEEKS = 1;
+  function pregnancyWeeks() {
+    return typeof LT.pregnancyDurationWeeks === "function" ? LT.pregnancyDurationWeeks() : 1;
+  }
 
   function bag(ch) {
     if (!ch.pregnancy) {
@@ -171,7 +173,7 @@
   };
 
   function pregStageHours() {
-    return Math.floor((PREGNANCY_DURATION_WEEKS * 7 * 24) / 2);
+    return Math.floor((pregnancyWeeks() * 7 * 24) / 2);
   }
 
   function stageDuration() {

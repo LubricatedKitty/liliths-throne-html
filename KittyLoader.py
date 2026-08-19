@@ -91,6 +91,35 @@ def strip_mod_comments(text):
     return "\n".join(kept)
 
 
+def parse_depends_value(value):
+    """Split a Depends On: value into tokens. Commas; quotes optional."""
+    value = (value or "").strip()
+    if not value:
+        return []
+    parts = []
+    current = []
+    in_quote = None
+    for ch in value:
+        if in_quote:
+            if ch == in_quote:
+                in_quote = None
+            else:
+                current.append(ch)
+        elif ch in ('"', "'"):
+            in_quote = ch
+        elif ch == ",":
+            token = "".join(current).strip()
+            if token:
+                parts.append(token)
+            current = []
+        else:
+            current.append(ch)
+    token = "".join(current).strip()
+    if token:
+        parts.append(token)
+    return parts
+
+
 def parse_mod_meta(text):
     meta = {
         "name": "",
@@ -99,6 +128,7 @@ def parse_mod_meta(text):
         "category": "",
         "version": "",
         "game_version": "",
+        "depends": [],
     }
     key_map = {
         "name": "name",
@@ -108,20 +138,142 @@ def parse_mod_meta(text):
         "version": "version",
         "game version": "game_version",
         "game_version": "game_version",
+        "depends on": "depends",
+        "depends": "depends",
+        "dependencies": "depends",
     }
     for raw in strip_mod_comments(text).split("\n"):
         line = raw.strip()
         if not line:
             continue
-        if line.startswith("Replace") or line.startswith("Add Javascript") or line.startswith("Add Content") or line.startswith("~~") or line.startswith("With:"):
+        if line.startswith("Replace") or line.startswith("Add Javascript") or line.startswith("Add Content") or line.startswith("Add Boot") or line.startswith("~~") or line.startswith("With:"):
             break
         if ":" not in line:
             continue
         key, value = line.split(":", 1)
         mapped = key_map.get(key.strip().lower())
-        if mapped:
+        if mapped == "depends":
+            meta["depends"].extend(parse_depends_value(value))
+        elif mapped:
             meta[mapped] = value.strip()
     return meta
+
+
+def mod_identity_keys(mod):
+    keys = set()
+    filename = (mod.get("file") or "").strip()
+    if filename:
+        keys.add(filename.lower())
+        keys.add(os.path.splitext(filename)[0].lower())
+    name = (mod.get("name") or "").strip()
+    if name:
+        keys.add(name.lower())
+    return keys
+
+
+def resolve_dep(token, mods):
+    raw = (token or "").strip()
+    if not raw:
+        return None
+    wanted = {raw.lower(), os.path.splitext(raw)[0].lower()}
+    if not raw.lower().endswith(".mod"):
+        wanted.add(raw.lower() + ".mod")
+    for mod in mods or []:
+        if wanted & mod_identity_keys(mod):
+            return mod
+    return None
+
+
+def missing_depends(mod, enabled_files, mods):
+    """Return [{token, reason, file, name}] for deps that are missing or not enabled."""
+    enabled = {str(name) for name in (enabled_files or [])}
+    out = []
+    for token in mod.get("depends") or []:
+        found = resolve_dep(token, mods)
+        if not found:
+            out.append({"token": token, "reason": "missing", "file": "", "name": token})
+        elif found["file"] not in enabled:
+            out.append({
+                "token": token,
+                "reason": "disabled",
+                "file": found["file"],
+                "name": found.get("name") or found["file"],
+            })
+    return out
+
+
+def sort_enabled_by_depends(enabled, mods):
+    """Stable topological sort: required mods apply before the mods that depend on them."""
+    enabled = list(enabled or [])
+    if not enabled:
+        return enabled
+    graph = {name: set() for name in enabled}
+    for name in enabled:
+        mod = next((m for m in (mods or []) if m.get("file") == name), None)
+        if not mod:
+            continue
+        for token in mod.get("depends") or []:
+            found = resolve_dep(token, mods)
+            if found and found["file"] in graph and found["file"] != name:
+                graph[name].add(found["file"])
+    remaining = {name: set(deps) for name, deps in graph.items()}
+    out = []
+    while remaining:
+        ready = [name for name, deps in remaining.items() if not deps]
+        if not ready:
+            for name in enabled:
+                if name in remaining:
+                    out.append(name)
+            break
+        ready.sort(key=enabled.index)
+        pick = ready[0]
+        out.append(pick)
+        del remaining[pick]
+        for deps in remaining.values():
+            deps.discard(pick)
+    return out
+
+
+def format_missing_depends(missing):
+    lines = []
+    for item in missing or []:
+        if item.get("reason") == "missing":
+            lines.append("  • " + item["name"] + " — not installed")
+        else:
+            label = item["name"]
+            if item.get("file") and item["file"] not in label:
+                label = label + " (" + item["file"] + ")"
+            lines.append("  • " + label + " — not enabled")
+    return "\n".join(lines)
+
+
+SKIP_MOD_DIRS = ("logs", "backup", "cache")
+
+
+def discover_mod_files(mods_dir):
+    """Find .mod files under mods/, including subfolders. Same walk as KittyPatcher.
+
+    Identity is the basename (lowercase), matching KittyPatcher's apply list.
+    A later walk hit with the same name replaces an earlier one.
+    """
+    found = {}
+    if not os.path.isdir(mods_dir):
+        return []
+    for root, dirs, files in os.walk(mods_dir):
+        dirs[:] = [d for d in dirs if d.lower() not in SKIP_MOD_DIRS]
+        for name in files:
+            if not name.lower().endswith(".mod"):
+                continue
+            path = os.path.join(root, name)
+            if not os.path.isfile(path):
+                continue
+            rel = os.path.relpath(path, mods_dir).replace("\\", "/")
+            found[name.lower()] = {
+                "file": name,
+                "path": path,
+                "rel": rel,
+            }
+    return [found[key] for key in sorted(found)]
 
 
 def write_mod_meta(path, name, description, category):
@@ -145,6 +297,7 @@ def write_mod_meta(path, name, description, category):
             stripped.startswith("Replace")
             or stripped.startswith("Add Javascript")
             or stripped.startswith("Add Content")
+            or stripped.startswith("Add Boot")
             or stripped.startswith("~~")
         ):
             for key in ("name", "description", "category"):
@@ -192,7 +345,8 @@ def highlight_mod_source(editor):
         (r"^Replace(?:\s+\[[^\]]+\])?:", "keyword"),
         (r"^With:", "keyword"),
         (r"^Add (?:Javascript|Content)(?:\s+\[[^\]]+\])?:", "keyword"),
-        (r"^Name:|^Author:|^Description:|^Category:|^Version:|^Game Version:", "meta"),
+        (r"^Add Boot(?:\s+\[[^\]]+\])?:", "keyword"),
+        (r"^Name:|^Author:|^Description:|^Category:|^Version:|^Game Version:|^Depends On:|^Depends:|^Dependencies:", "meta"),
         (r"\[[^\]]+\]", "path"),
     )
     for pattern, tag in patterns:
@@ -328,6 +482,26 @@ class KittyLoader(tk.Tk):
         os.makedirs(self.mods_dir, exist_ok=True)
         with open(self.state_path, "w", encoding="utf-8") as handle:
             json.dump(self.state, handle, indent=2)
+        self.write_applied_mods_js()
+
+    def write_applied_mods_js(self):
+        """Fallback the game reads when it cannot fetch kittyloader.json (file://)."""
+        by_file = {mod["file"]: mod for mod in (self.mods or [])}
+        rows = []
+        for name in self.enabled_in_order():
+            mod = by_file.get(name) or {}
+            rows.append({
+                "file": name,
+                "name": mod.get("name") or os.path.splitext(name)[0],
+                "author": mod.get("author") or "",
+                "version": mod.get("version") or "",
+                "rel": mod.get("rel") or name,
+                "depends": list(mod.get("depends") or []),
+            })
+        path = os.path.join(self.mods_dir, "appliedMods.js")
+        body = "window.LT = window.LT || {};\nLT.APPLIED_MODS = " + json.dumps(rows, indent=2, ensure_ascii=False) + ";\n"
+        with open(path, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(body)
 
     def profile(self):
         name = self.state.get("active_profile")
@@ -339,27 +513,22 @@ class KittyLoader(tk.Tk):
 
     def refresh_mods(self):
         found = []
-        if os.path.isdir(self.mods_dir):
-            for name in os.listdir(self.mods_dir):
-                if not name.lower().endswith(".mod"):
-                    continue
-                path = os.path.join(self.mods_dir, name)
-                if not os.path.isfile(path):
-                    continue
-                with open(path, "r", encoding="utf-8", errors="ignore") as handle:
-                    text = handle.read()
-                meta = parse_mod_meta(text)
-                found.append({
-                    "file": name,
-                    "path": path,
-                    "name": meta["name"] or os.path.splitext(name)[0],
-                    "author": meta["author"] or "Unknown",
-                    "description": meta["description"],
-                    "category": meta["category"] or "Unsorted",
-                    "version": meta["version"] or "—",
-                    "game_version": meta["game_version"] or "—",
-                })
-        found.sort(key=lambda m: m["file"].lower())
+        for item in discover_mod_files(self.mods_dir):
+            with open(item["path"], "r", encoding="utf-8", errors="ignore") as handle:
+                text = handle.read()
+            meta = parse_mod_meta(text)
+            found.append({
+                "file": item["file"],
+                "path": item["path"],
+                "rel": item["rel"],
+                "name": meta["name"] or os.path.splitext(item["file"])[0],
+                "author": meta["author"] or "Unknown",
+                "description": meta["description"],
+                "category": meta["category"] or "Unsorted",
+                "version": meta["version"] or "—",
+                "game_version": meta["game_version"] or "—",
+                "depends": list(meta.get("depends") or []),
+            })
         profile = self.profile()
         known = [m["file"] for m in found]
         order = [name for name in profile.get("order", []) if name in known]
@@ -420,10 +589,12 @@ class KittyLoader(tk.Tk):
 
         self.tree.tag_configure("odd", background=SURFACE)
         self.tree.tag_configure("even", background=ROW_ALT)
+        self.tree.tag_configure("missingdep", foreground="#ff6b6b")
         self.tree.bind("<Button-1>", self.on_tree_click)
         self.tree.bind("<B1-Motion>", self.on_tree_drag)
         self.tree.bind("<ButtonRelease-1>", self.on_tree_drop)
         self.tree.bind("<Double-1>", self.on_tree_double)
+        self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
 
         # add_row = tk.Frame(pad, bg=BG)
         # add_row.pack(fill="x", pady=(8, 0))
@@ -504,7 +675,7 @@ class KittyLoader(tk.Tk):
         entry = ttk.Entry(pop, width=36, style="Dark.TEntry")
         entry.pack(padx=16)
         entry.focus_set()
-        ttk.Label(pop, text="Saved as a .mod file in the mods folder.", style="Muted.TLabel").pack(anchor="w", padx=16, pady=(6, 0))
+        ttk.Label(pop, text="Saved as a .mod file in the mods folder. Subfolders are also listed.", style="Muted.TLabel").pack(anchor="w", padx=16, pady=(6, 0))
         err = ttk.Label(pop, text="", style="Muted.TLabel")
         err.pack(anchor="w", padx=16, pady=(4, 0))
 
@@ -532,8 +703,9 @@ class KittyLoader(tk.Tk):
                 f"Category: Unsorted\n"
                 f"Version: 1.0.0\n"
                 f"Game Version: 0.1\n"
+                f"# Depends On: OtherMod.mod\n"
                 f"\n"
-                f"# Add Replace / Add Javascript / Add Content blocks below.\n"
+                f"# Add Replace / Add Boot / Add Javascript / Add Content blocks below.\n"
             )
             with open(path, "w", encoding="utf-8", newline="\n") as handle:
                 handle.write(body)
@@ -632,11 +804,20 @@ class KittyLoader(tk.Tk):
                 mod["game_version"],
                 str(mod["priority"]),
             )
-            tag = "even" if index % 2 else "odd"
-            self.tree.insert("", "end", iid=mod["file"], values=values, tags=(tag,))
+            tags = ["even" if index % 2 else "odd"]
+            if missing_depends(mod, self.profile().get("enabled", []), self.mods):
+                tags.append("missingdep")
+            self.tree.insert("", "end", iid=mod["file"], values=values, tags=tuple(tags))
         mode = "drag to reorder" if self.sort_key == "priority" and not self.sort_desc else "sort by Priority (ascending) to drag load order"
         enabled = len(self.profile().get("enabled", []))
-        self.status.configure(text=f"{enabled} enabled · {len(self.mods)} mods · {mode}")
+        bad = 0
+        enabled_set = self.profile().get("enabled", [])
+        for mod in self.mods:
+            if missing_depends(mod, enabled_set, self.mods):
+                bad += 1
+        extra = f" · {bad} missing dependencies" if bad else ""
+        self.status.configure(text=f"{enabled} enabled · {len(self.mods)} mods · {mode}{extra}")
+        self._table_status = self.status.cget("text")
 
     def on_tree_click(self, event):
         if self.tree.identify_region(event.x, event.y) != "cell":
@@ -679,12 +860,92 @@ class KittyLoader(tk.Tk):
         self.refresh_table()
         self.tree.selection_set(source)
 
+    def on_tree_select(self, _event=None):
+        sel = self.tree.selection()
+        if not sel:
+            return
+        mod = self.find_mod(sel[0])
+        if not mod:
+            return
+        missing = missing_depends(mod, self.profile().get("enabled", []), self.mods)
+        if missing:
+            detail = "; ".join(
+                item["name"] + (" (not installed)" if item["reason"] == "missing" else " (not enabled)")
+                for item in missing
+            )
+            self.status.configure(text=mod["name"] + " needs " + detail)
+        elif getattr(self, "_table_status", ""):
+            self.status.configure(text=self._table_status)
+
+    def dependents_of(self, filename, enabled_only=True):
+        enabled = set(self.profile().get("enabled", []))
+        out = []
+        for mod in self.mods:
+            if enabled_only and mod["file"] not in enabled:
+                continue
+            if mod["file"] == filename:
+                continue
+            for token in mod.get("depends") or []:
+                found = resolve_dep(token, self.mods)
+                if found and found["file"] == filename:
+                    out.append(mod)
+                    break
+        return out
+
+    def place_before(self, earlier, later):
+        order = list(self.profile().setdefault("order", []))
+        if earlier not in order:
+            order.append(earlier)
+        if later not in order:
+            order.append(later)
+        if order.index(earlier) > order.index(later):
+            order.remove(earlier)
+            order.insert(order.index(later), earlier)
+        self.profile()["order"] = order
+
     def toggle_enabled(self, filename):
         enabled = self.profile().setdefault("enabled", [])
+        mod = self.find_mod(filename)
         if filename in enabled:
+            kids = self.dependents_of(filename, enabled_only=True)
+            if kids:
+                names = "\n".join("  • " + (k.get("name") or k["file"]) for k in kids)
+                if not messagebox.askyesno(
+                    APP_TITLE,
+                    f'These enabled mods depend on "{(mod or {}).get("name") or filename}":\n{names}\n\nDisable it anyway? They will turn red until it is on again.',
+                ):
+                    return
             enabled.remove(filename)
         else:
+            missing = missing_depends(mod or {}, enabled, self.mods)
+            if missing:
+                body = format_missing_depends(missing)
+                not_installed = [item for item in missing if item["reason"] == "missing"]
+                can_enable = [item for item in missing if item["reason"] == "disabled" and item.get("file")]
+                title = (mod or {}).get("name") or filename
+                if not_installed and not can_enable:
+                    if not messagebox.askokcancel(
+                        APP_TITLE,
+                        f'"{title}" needs:\n{body}\n\nIt will stay red until that mod is in the mods folder and enabled.\nEnable this one anyway?',
+                    ):
+                        return
+                else:
+                    answer = messagebox.askyesnocancel(
+                        APP_TITLE,
+                        f'"{title}" needs:\n{body}\n\nYes = enable the required mods too.\nNo = enable only this one (it stays red).\nCancel = leave it off.',
+                    )
+                    if answer is None:
+                        return
+                    if answer:
+                        for item in can_enable:
+                            if item["file"] not in enabled:
+                                enabled.append(item["file"])
+                            self.place_before(item["file"], filename)
             enabled.append(filename)
+            for token in (mod or {}).get("depends") or []:
+                found = resolve_dep(token, self.mods)
+                if found and found["file"] in enabled:
+                    self.place_before(found["file"], filename)
         self.save_state()
         self.refresh_table()
         self.tree.selection_set(filename)
@@ -749,12 +1010,13 @@ class KittyLoader(tk.Tk):
             return entry
 
         name_e = field("Name", mod["name"])
-        field("File", mod["file"], readonly=True)
+        field("File", mod.get("rel") or mod["file"], readonly=True)
         field("Author", mod["author"], readonly=True)
         desc_e = field("Description", mod["description"], multiline=True)
         cat_e = field("Category", mod["category"])
         field("Version", mod["version"], readonly=True)
         field("Game Version", mod["game_version"], readonly=True)
+        field("Depends On", ", ".join(mod.get("depends") or []) or "—", readonly=True)
         field("Priority", str(priority), readonly=True)
 
         def save():
@@ -788,7 +1050,7 @@ class KittyLoader(tk.Tk):
         pop.geometry("860x620")
         pop.transient(self)
 
-        ttk.Label(pop, text=mod["file"], style="Muted.TLabel").pack(anchor="w", padx=12, pady=(12, 0))
+        ttk.Label(pop, text=mod.get("rel") or mod["file"], style="Muted.TLabel").pack(anchor="w", padx=12, pady=(12, 0))
 
         body = tk.Frame(pop, bg=SURFACE)
         body.pack(fill="both", expand=True, padx=12, pady=12)
@@ -856,16 +1118,37 @@ class KittyLoader(tk.Tk):
         if not enabled:
             if not messagebox.askyesno(APP_TITLE, "No mods are enabled. Patch with an empty list? This restores backups and applies nothing."):
                 return
+        problems = []
+        enabled_set = set(enabled)
+        for name in enabled:
+            mod = self.find_mod(name)
+            if not mod:
+                continue
+            missing = missing_depends(mod, enabled_set, self.mods)
+            if missing:
+                problems.append((mod.get("name") or name) + " needs:\n" + format_missing_depends(missing))
+        if problems:
+            if not messagebox.askyesno(
+                APP_TITLE,
+                "These enabled mods are missing dependencies:\n\n"
+                + "\n\n".join(problems)
+                + "\n\nApply anyway? The dependent mod may fail or do nothing.",
+            ):
+                return
+        ordered = sort_enabled_by_depends(enabled, self.mods)
         try:
             patcher = load_patcher()
-            result = patcher.run_patch(enabled_mod_files=enabled, pause=False, root=self.root_dir)
+            result = patcher.run_patch(enabled_mod_files=ordered, pause=False, root=self.root_dir)
         except Exception as exc:
             messagebox.showerror(APP_TITLE, str(exc))
             return
         processed = ", ".join(result.get("processed") or []) or "(none)"
+        note = ""
+        if ordered != enabled:
+            note = "\nRequired mods were applied first."
         messagebox.showinfo(
             APP_TITLE,
-            f"Patch finished.\nEnabled mods applied: {processed}\nLog: {result.get('log')}",
+            f"Patch finished.\nEnabled mods applied: {processed}{note}\nLog: {result.get('log')}",
         )
         self.status.configure(text="Patch finished")
 
@@ -952,7 +1235,7 @@ class KittyLoader(tk.Tk):
                 (r"\[[^\]]+\]", "path"),
                 (r"\b(Replacing|Appended|Restored|Backup created|Mod patching (?:started|complete)|Successful Mods)\b", "ok"),
                 (r"\b(No match found|Failed|Error|Warning|Fails|missing)\b", "fail"),
-                (r"\b(Replace|With|Add Javascript|Add Content|Patch|Log)\b", "keyword"),
+                (r"\b(Replace|With|Add Boot|Add Javascript|Add Content|Patch|Log)\b", "keyword"),
             )
             for pattern, tag in patterns:
                 for match in re.finditer(pattern, content, re.MULTILINE | re.IGNORECASE):
@@ -1002,7 +1285,8 @@ class KittyLoader(tk.Tk):
             return
         groups = {}
         for filename in self.enabled_in_order():
-            path = os.path.join(self.mods_dir, filename)
+            mod = self.find_mod(filename)
+            path = mod["path"] if mod else os.path.join(self.mods_dir, filename)
             if not os.path.isfile(path):
                 continue
             with open(path, "r", encoding="utf-8", errors="ignore") as handle:
@@ -1019,7 +1303,7 @@ class KittyLoader(tk.Tk):
         text = tk.Text(pop, bg=SURFACE2, fg=TEXT, insertbackground=TEXT, relief="flat", wrap="word", font=("Consolas", 9))
         text.pack(fill="both", expand=True, padx=12, pady=12)
         if not conflicts:
-            text.insert("1.0", "No replace conflicts among enabled mods.\nAdd Javascript appends can share a file; that is not treated as a conflict.")
+            text.insert("1.0", "No replace conflicts among enabled mods.\nAdd Boot and Add Javascript can share a file; that is not treated as a conflict.")
         else:
             lines = []
             for (target, old), files in conflicts.items():
